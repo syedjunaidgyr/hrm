@@ -1,4 +1,4 @@
-import { mysqlTable, varchar, text, decimal, timestamp, index } from "drizzle-orm/mysql-core";
+import { mysqlTable, varchar, text, decimal, timestamp, date, index } from "drizzle-orm/mysql-core";
 import { users } from "./users";
 
 export const candidates = mysqlTable(
@@ -21,6 +21,8 @@ export const candidates = mysqlTable(
     source: varchar("source", { length: 100 }),
     recruiter: varchar("recruiter", { length: 255 }),
     notes: text("notes"),
+    dateSubmitted: date("date_submitted"),
+    dateClosed: date("date_closed"),
     createdBy: varchar("created_by", { length: 36 }).notNull().references(() => users.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),

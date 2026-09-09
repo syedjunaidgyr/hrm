@@ -40,7 +40,7 @@ export default async function VendorCandidateDetailPage({
                 <Badge status={sub.status}>{sub.status}</Badge>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Submitted for My Job: <strong className="text-slate-800">{sub.job.title}</strong> ({sub.job.jobCode})
+                Submitted for: <strong className="text-slate-800">{sub.job.title}</strong> ({sub.job.jobCode})
               </p>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default async function VendorCandidateDetailPage({
 
             {/* Historical Feedback List */}
             <Card>
-              <CardHeader title="My Previous Feedback History" />
+              <CardHeader title="Previous Feedback History" />
               {sub.feedbackList.length === 0 ? (
                 <p className="text-xs text-slate-500 italic py-2">No feedback submitted yet for this candidate.</p>
               ) : (

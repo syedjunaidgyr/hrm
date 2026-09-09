@@ -5,8 +5,7 @@ import { getJobById } from "@/services/job.service";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
-import { ArrowLeft, Download, Eye, Users } from "lucide-react";
-
+import { ArrowLeft, Users, Pencil } from "lucide-react";
 import { ResumePreviewModal } from "@/components/ui/ResumePreviewModal";
 
 export default async function VendorJobDetailPage({
@@ -17,22 +16,25 @@ export default async function VendorJobDetailPage({
   const user = await requireVendor();
   const { id: jobId } = await params;
 
-  // Strict Vendor level isolation check
   const job = await getJobById(jobId, user.vendorId);
+
+  const disciplineName = (job as any).discipline?.name ?? job.department ?? "—";
+  const projectName = (job as any).project?.name ?? "—";
 
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
               href="/vendor/jobs"
-              className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
+              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-mono text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">
                   {job.jobCode}
                 </span>
@@ -41,14 +43,25 @@ export default async function VendorJobDetailPage({
                 <Badge status={job.status}>{job.status}</Badge>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Department: <strong className="text-slate-800">{job.department}</strong> • Location: <strong className="text-slate-800">{job.location}</strong>
+                Discipline: <strong className="text-slate-800">{disciplineName}</strong>
+                {projectName !== "—" && (
+                  <> • Project: <strong className="text-slate-800">{projectName}</strong></>
+                )}
+                {" "}• Location: <strong className="text-slate-800">{job.location}</strong>
               </p>
             </div>
           </div>
+          <Link
+            href={`/vendor/jobs/${job.id}/edit`}
+            className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs transition-all"
+          >
+            <Pencil className="w-4 h-4" /> Edit JD
+          </Link>
         </div>
 
-        {/* Job Details Cards Grid */}
+        {/* Details Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left — spec */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader title="Job Specification & Requirements" />
@@ -57,7 +70,7 @@ export default async function VendorJobDetailPage({
                   <h4 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-500 mb-1">
                     Job Description
                   </h4>
-                  <p className="leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100 text-slate-800">
+                  <p className="leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-800">
                     {job.description}
                   </p>
                 </div>
@@ -67,7 +80,7 @@ export default async function VendorJobDetailPage({
                     <h4 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-500 mb-1">
                       Key Responsibilities
                     </h4>
-                    <p className="leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100 text-slate-800">
+                    <p className="leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-800">
                       {job.responsibilities}
                     </p>
                   </div>
@@ -78,7 +91,7 @@ export default async function VendorJobDetailPage({
                     <h4 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-500">
                       Required Skills
                     </h4>
-                    <p className="font-semibold text-brand-700 bg-brand-50 p-2.5 rounded-lg border border-brand-200 mt-1">
+                    <p className="font-semibold bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1 text-slate-800">
                       {job.requiredSkills}
                     </p>
                   </div>
@@ -87,7 +100,7 @@ export default async function VendorJobDetailPage({
                       <h4 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-500">
                         Preferred Skills
                       </h4>
-                      <p className="font-medium text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-1">
+                      <p className="font-medium bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1 text-slate-700">
                         {job.preferredSkills}
                       </p>
                     </div>
@@ -97,49 +110,67 @@ export default async function VendorJobDetailPage({
             </Card>
           </div>
 
+          {/* Right — summary */}
           <div className="lg:col-span-1 space-y-6">
             <Card>
-              <CardHeader title="Overview Summary" />
-              <div className="space-y-3 text-xs text-slate-700">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <span className="text-slate-500">Employment Type</span>
-                  <span className="font-bold text-slate-900">{job.employmentType} ({job.workMode})</span>
-                </div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <span className="text-slate-500">Experience Range</span>
-                  <span className="font-bold text-slate-900">{job.minExperience} - {job.maxExperience} Yrs</span>
-                </div>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <span className="text-slate-500">Open Positions</span>
-                  <span className="font-bold text-slate-900">{job.numPositions} Positions</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Budget Range</span>
-                  <span className="font-bold text-emerald-700">
-                    {job.minSalary ? `$${job.minSalary} - $${job.maxSalary}` : "Negotiable"}
-                  </span>
-                </div>
+              <CardHeader title="Overview" />
+              <div className="space-y-2.5 text-xs text-slate-700">
+                {[
+                  { label: "Project", value: projectName },
+                  { label: "Discipline", value: disciplineName },
+                  { label: "Employment Type", value: `${job.employmentType} (${job.workMode})` },
+                  { label: "Experience", value: `${job.minExperience} – ${job.maxExperience} Yrs` },
+                  { label: "Open Positions", value: `${job.numPositions}` },
+                  {
+                    label: "Budget",
+                    value: job.minSalary ? `$${job.minSalary} – $${job.maxSalary}` : "Negotiable",
+                    green: true,
+                  },
+                  { label: "Notice Period", value: job.noticePeriod || "Standard" },
+                  {
+                    label: "Date Received",
+                    value: job.dateReceived
+                      ? new Date(job.dateReceived).toLocaleDateString()
+                      : "—",
+                  },
+                  {
+                    label: "Date Closed",
+                    value: job.dateClosed
+                      ? new Date(job.dateClosed).toLocaleDateString()
+                      : "—",
+                  },
+                ].map(({ label, value, green }) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between pb-2 border-b border-slate-100 last:border-0 last:pb-0"
+                  >
+                    <span className="text-slate-500">{label}</span>
+                    <span className={`font-bold ${green ? "text-emerald-700" : "text-slate-900"}`}>
+                      {value}
+                    </span>
+                  </div>
+                ))}
               </div>
             </Card>
           </div>
         </div>
 
-        {/* Submitted Candidates Table */}
+        {/* Submitted CVs */}
         <Card>
           <div className="pb-4 border-b border-slate-100 mb-4">
             <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-brand-600" />
-              Submitted Candidates ({job.submissions.length})
+              <Users className="w-5 h-5 text-slate-400" />
+              Submitted CVs ({job.submissions.length})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Candidates submitted by Admin for your Job Description.
+              CVs submitted by Rightfit for this Job Description.
             </p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                <tr className="border-b border-slate-200 text-slate-500 uppercase font-semibold text-[11px] tracking-wide">
                   <th className="py-2.5 px-3">Candidate</th>
                   <th className="py-2.5 px-3">Experience</th>
                   <th className="py-2.5 px-3">Skills</th>
@@ -151,18 +182,24 @@ export default async function VendorJobDetailPage({
               <tbody className="divide-y divide-slate-100">
                 {job.submissions.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500 font-medium">
-                      No candidates submitted yet for this job description.
+                    <td colSpan={6} className="py-10 text-center text-slate-500 font-medium">
+                      No CVs submitted yet for this Job Description.
                     </td>
                   </tr>
                 ) : (
                   job.submissions.map((sub) => (
                     <tr key={sub.id} className="hover:bg-slate-50">
                       <td className="py-3 px-3 font-bold text-slate-900">{sub.candidate.name}</td>
-                      <td className="py-3 px-3 text-slate-800 font-semibold">{sub.candidate.totalExperience} Yrs</td>
-                      <td className="py-3 px-3 text-slate-600 max-w-xs truncate">{sub.candidate.skills}</td>
+                      <td className="py-3 px-3 font-semibold text-slate-800">
+                        {sub.candidate.totalExperience} Yrs
+                      </td>
+                      <td className="py-3 px-3 text-slate-600 max-w-xs truncate">
+                        {sub.candidate.skills}
+                      </td>
                       <td className="py-3 px-3">
-                        <Badge status={sub.status}>{sub.status}</Badge>
+                        <Badge status={sub.status}>
+                          {sub.status.replace(/_/g, " ")}
+                        </Badge>
                       </td>
                       <td className="py-3 px-3">
                         {sub.resumeFile ? (
@@ -170,7 +207,7 @@ export default async function VendorJobDetailPage({
                             fileId={sub.resumeFile.id}
                             fileName={sub.resumeFile.fileName}
                             candidateName={sub.candidate.name}
-                            triggerLabel="Preview Resume"
+                            triggerLabel="Preview"
                             triggerVariant="link"
                           />
                         ) : (
@@ -180,9 +217,9 @@ export default async function VendorJobDetailPage({
                       <td className="py-3 px-3 text-right">
                         <Link
                           href={`/vendor/candidates/${sub.id}`}
-                          className="inline-flex items-center gap-1 font-bold text-brand-600 hover:underline"
+                          className="inline-flex items-center gap-1 font-bold text-blue-600 hover:underline text-[11px]"
                         >
-                          <Eye className="w-3.5 h-3.5" /> Review / Rate
+                          Review →
                         </Link>
                       </td>
                     </tr>

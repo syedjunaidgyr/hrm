@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
   // Public routes
   if (pathname === "/login" || pathname === "/") {
     if (session) {
-      const target = session.role === "ADMIN" ? "/admin/dashboard" : "/vendor/dashboard";
+      const target = session.role === "ADMIN" ? "/admin/dashboard" : "/vendor/jobs";
       return NextResponse.redirect(new URL(target, request.url));
     }
     if (pathname === "/") {
@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
     if (session.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/vendor/dashboard", request.url));
+      return NextResponse.redirect(new URL("/vendor/jobs", request.url));
     }
   }
 

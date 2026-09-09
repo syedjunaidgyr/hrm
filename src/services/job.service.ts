@@ -7,7 +7,9 @@ import { createNotification } from "./notification.service";
 
 export interface CreateJobInput {
   title: string;
-  department: string;
+  department?: string;
+  disciplineId?: string | null;
+  projectId?: string | null;
   location: string;
   employmentType: string;
   workMode: string;
@@ -25,8 +27,10 @@ export interface CreateJobInput {
   noticePeriod?: string;
   priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   targetJoiningDate?: string;
+  dateReceived?: string;
+  dateClosed?: string;
   additionalNotes?: string;
-  status: "DRAFT" | "SUBMITTED";
+  status: "PENDING" | "WIP" | "CANCELLED" | "COMPLETED" | "DRAFT" | "SUBMITTED";
 }
 
 export async function createJob(input: CreateJobInput, userId: string, vendorId: string) {
@@ -37,8 +41,10 @@ export async function createJob(input: CreateJobInput, userId: string, vendorId:
     id: jobId,
     vendorId,
     jobCode,
+    projectId: input.projectId || null,
+    disciplineId: input.disciplineId || null,
     title: input.title,
-    department: input.department,
+    department: input.department || null,
     location: input.location,
     employmentType: input.employmentType || "FULL_TIME",
     workMode: input.workMode || "ON_SITE",
@@ -56,6 +62,8 @@ export async function createJob(input: CreateJobInput, userId: string, vendorId:
     noticePeriod: input.noticePeriod || null,
     priority: input.priority || "MEDIUM",
     targetJoiningDate: input.targetJoiningDate ? (input.targetJoiningDate as any) : null,
+    dateReceived: input.dateReceived ? (input.dateReceived as any) : null,
+    dateClosed: input.dateClosed ? (input.dateClosed as any) : null,
     additionalNotes: input.additionalNotes || null,
     status: input.status,
     createdBy: userId,
@@ -119,6 +127,8 @@ export async function updateJob(
   const updateData: Partial<NewJobDescription> = {};
   if (input.title !== undefined) updateData.title = input.title;
   if (input.department !== undefined) updateData.department = input.department;
+  if (input.disciplineId !== undefined) updateData.disciplineId = input.disciplineId;
+  if (input.projectId !== undefined) updateData.projectId = input.projectId;
   if (input.location !== undefined) updateData.location = input.location;
   if (input.employmentType !== undefined) updateData.employmentType = input.employmentType;
   if (input.workMode !== undefined) updateData.workMode = input.workMode;
@@ -136,6 +146,9 @@ export async function updateJob(
   if (input.noticePeriod !== undefined) updateData.noticePeriod = input.noticePeriod;
   if (input.priority !== undefined) updateData.priority = input.priority;
   if (input.status !== undefined) updateData.status = input.status;
+  if (input.dateReceived !== undefined) updateData.dateReceived = input.dateReceived as any;
+  if (input.dateClosed !== undefined) updateData.dateClosed = input.dateClosed as any;
+  if (input.additionalNotes !== undefined) updateData.additionalNotes = input.additionalNotes;
 
   await db.transaction(async (tx) => {
     await tx.update(jobDescriptions).set(updateData).where(and(...conditions));
@@ -207,8 +220,18 @@ export async function getJobs(options: {
       orderBy: [desc(jobDescriptions.createdAt)],
       with: {
         vendor: true,
+        project: true,
+        discipline: true,
         submissions: {
           columns: { id: true, status: true },
+          with: {
+            candidate: {
+              columns: { id: true, name: true, currentDesignation: true },
+            },
+            resumeFile: {
+              columns: { id: true, fileName: true },
+            },
+          },
         },
       },
     }),
@@ -238,6 +261,8 @@ export async function getJobById(jobId: string, vendorId?: string | null) {
     where: and(...conditions),
     with: {
       vendor: true,
+      project: true,
+      discipline: true,
       submissions: {
         with: {
           candidate: true,

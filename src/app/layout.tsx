@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vendor Recruitment Management Portal",
-  description: "Enterprise multi-tenant recruitment management portal for Admin teams and recruitment Vendors.",
+  title: "Rightfit — Recruitment Portal",
+  description: "Rightfit recruitment management portal for clients and the Rightfit team.",
 };
 
 export default function RootLayout({

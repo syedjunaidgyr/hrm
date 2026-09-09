@@ -35,7 +35,7 @@ export default async function AdminReportsPage() {
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Recruitment Analytics & Reports</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Comprehensive reporting on recruitment pipeline status, vendor performance, and candidate selection ratios.
+            Pipeline status breakdown, client performance, and candidate selection ratios.
           </p>
         </div>
 
@@ -55,23 +55,25 @@ export default async function AdminReportsPage() {
 
           {/* Vendor Performance Report */}
           <Card className="md:col-span-2">
-            <CardHeader title="Vendor Performance Analytics" subtitle="Submissions, shortlists, and feedback response metrics" />
+            <CardHeader title="Client Performance Analytics" subtitle="CV submissions, interviews, and onboarding metrics per client" />
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-500 uppercase font-semibold">
-                    <th className="py-2.5 px-3">Vendor Partner</th>
-                    <th className="py-2.5 px-3">Jobs Created</th>
-                    <th className="py-2.5 px-3">Candidates Received</th>
-                    <th className="py-2.5 px-3">Shortlist Count</th>
-                    <th className="py-2.5 px-3">Selected</th>
+                    <th className="py-2.5 px-3">Client</th>
+                    <th className="py-2.5 px-3">JDs Created</th>
+                    <th className="py-2.5 px-3">CVs Received</th>
+                    <th className="py-2.5 px-3">Interviews</th>
+                    <th className="py-2.5 px-3">Onboarded</th>
                     <th className="py-2.5 px-3">Avg Rating</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {vendorReportList.map((vend) => {
-                    const shortCount = vend.submissions.filter((s) => s.status === "SHORTLISTED").length;
-                    const selectedCount = vend.submissions.filter((s) => s.status === "SELECTED").length;
+                    const interviewCount = vend.submissions.filter(
+                      (s) => s.status === "INTERVIEW_SCHEDULED" || s.status === "INTERVIEW_COMPLETED"
+                    ).length;
+                    const onboardedCount = vend.submissions.filter((s) => s.status === "ONBOARDED" || s.status === "BILLED").length;
 
                     let totalRatings = 0;
                     let ratingCount = 0;
@@ -93,9 +95,9 @@ export default async function AdminReportsPage() {
                         </td>
                         <td className="py-3 px-3 font-semibold text-slate-800">{vend.jobDescriptions.length}</td>
                         <td className="py-3 px-3 font-semibold text-slate-800">{vend.submissions.length}</td>
-                        <td className="py-3 px-3 font-bold text-purple-700">{shortCount}</td>
-                        <td className="py-3 px-3 font-bold text-emerald-700">{selectedCount}</td>
-                        <td className="py-3 px-3 font-bold text-brand-600">{avgRating} {avgRating !== "N/A" && "/ 5"}</td>
+                        <td className="py-3 px-3 font-bold text-purple-700">{interviewCount}</td>
+                        <td className="py-3 px-3 font-bold text-emerald-700">{onboardedCount}</td>
+                        <td className="py-3 px-3 font-bold text-slate-600">{avgRating}{avgRating !== "N/A" && " / 5"}</td>
                       </tr>
                     );
                   })}

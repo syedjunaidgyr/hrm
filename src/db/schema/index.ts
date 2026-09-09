@@ -10,6 +10,8 @@ import { statusHistory } from "./status-history";
 import { comments } from "./comments";
 import { notifications } from "./notifications";
 import { auditLogs } from "./audit-logs";
+import { projects } from "./projects";
+import { disciplines } from "./disciplines";
 
 export * from "./vendors";
 export * from "./users";
@@ -22,12 +24,27 @@ export * from "./status-history";
 export * from "./comments";
 export * from "./notifications";
 export * from "./audit-logs";
+export * from "./projects";
+export * from "./disciplines";
 
 // Drizzle Relations
 export const vendorsRelations = relations(vendors, ({ many }) => ({
   users: many(users),
   jobDescriptions: many(jobDescriptions),
   submissions: many(candidateSubmissions),
+  projects: many(projects),
+}));
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  client: one(vendors, {
+    fields: [projects.clientId],
+    references: [vendors.id],
+  }),
+  jobDescriptions: many(jobDescriptions),
+}));
+
+export const disciplinesRelations = relations(disciplines, ({ many }) => ({
+  jobDescriptions: many(jobDescriptions),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -49,6 +66,14 @@ export const jobDescriptionsRelations = relations(jobDescriptions, ({ one, many 
   vendor: one(vendors, {
     fields: [jobDescriptions.vendorId],
     references: [vendors.id],
+  }),
+  project: one(projects, {
+    fields: [jobDescriptions.projectId],
+    references: [projects.id],
+  }),
+  discipline: one(disciplines, {
+    fields: [jobDescriptions.disciplineId],
+    references: [disciplines.id],
   }),
   createdByUser: one(users, {
     fields: [jobDescriptions.createdBy],

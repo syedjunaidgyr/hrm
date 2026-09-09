@@ -5,6 +5,10 @@ import { vendors } from "./vendors";
 import { users } from "./users";
 import { files } from "./files";
 
+// Candidate status lifecycle:
+// NEW (auto on upload) → VIEWED (auto on open/download) → REJECTED_L1 | INTERVIEW_SCHEDULED
+// → INTERVIEW_COMPLETED → REJECTED_L2 | PROGRESSED → ONBOARDED → BILLED
+
 export const candidateSubmissions = mysqlTable(
   "candidate_submissions",
   {
@@ -13,7 +17,10 @@ export const candidateSubmissions = mysqlTable(
     candidateId: varchar("candidate_id", { length: 36 }).notNull().references(() => candidates.id),
     vendorId: varchar("vendor_id", { length: 36 }).notNull().references(() => vendors.id),
     resumeFileId: varchar("resume_file_id", { length: 36 }).notNull().references(() => files.id),
-    status: varchar("status", { length: 50 }).notNull().default("SUBMITTED"),
+    // NEW | VIEWED | REJECTED_L1 | INTERVIEW_SCHEDULED | INTERVIEW_COMPLETED |
+    // INTERVIEW_DATETIME | REJECTED_L2 | PROGRESSED | ONBOARDED | BILLED
+    status: varchar("status", { length: 50 }).notNull().default("NEW"),
+    interviewDateTime: timestamp("interview_date_time"),
     submittedBy: varchar("submitted_by", { length: 36 }).notNull().references(() => users.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),

@@ -15,20 +15,17 @@ import { createAuditLog } from "./audit.service";
 import { createNotification } from "./notification.service";
 import { getStorageProvider } from "./storage.service";
 
+// New 10-state candidate lifecycle (client-facing)
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  SUBMITTED: ["UNDER_REVIEW", "SHORTLISTED", "REJECTED", "ON_HOLD", "WITHDRAWN"],
-  UNDER_REVIEW: ["SHORTLISTED", "INTERVIEW_SCHEDULED", "REJECTED", "ON_HOLD", "WITHDRAWN"],
-  SHORTLISTED: ["INTERVIEW_SCHEDULED", "FEEDBACK_PENDING", "REJECTED", "ON_HOLD", "WITHDRAWN"],
-  FEEDBACK_PENDING: ["INTERVIEW_SCHEDULED", "INTERVIEWED", "REJECTED", "ON_HOLD", "WITHDRAWN"],
-  INTERVIEW_SCHEDULED: ["INTERVIEWED", "REJECTED", "ON_HOLD", "WITHDRAWN"],
-  INTERVIEWED: ["SELECTED", "SHORTLISTED", "REJECTED", "ON_HOLD", "WITHDRAWN"],
-  SELECTED: ["OFFER_RELEASED", "REJECTED", "ON_HOLD", "WITHDRAWN"],
-  OFFER_RELEASED: ["OFFER_ACCEPTED", "REJECTED", "ON_HOLD", "WITHDRAWN"],
-  OFFER_ACCEPTED: ["JOINED", "WITHDRAWN"],
-  ON_HOLD: ["UNDER_REVIEW", "SHORTLISTED", "INTERVIEW_SCHEDULED", "REJECTED", "WITHDRAWN"],
-  REJECTED: ["UNDER_REVIEW"],
-  WITHDRAWN: [],
-  JOINED: [],
+  NEW: ["VIEWED", "REJECTED_L1", "INTERVIEW_SCHEDULED"],
+  VIEWED: ["REJECTED_L1", "INTERVIEW_SCHEDULED"],
+  REJECTED_L1: ["INTERVIEW_SCHEDULED"],        // can recover
+  INTERVIEW_SCHEDULED: ["INTERVIEW_COMPLETED", "REJECTED_L1"],
+  INTERVIEW_COMPLETED: ["REJECTED_L2", "PROGRESSED"],
+  REJECTED_L2: [],                              // terminal
+  PROGRESSED: ["ONBOARDED", "REJECTED_L2"],
+  ONBOARDED: ["BILLED"],
+  BILLED: [],                                   // terminal
 };
 
 export async function submitCandidateToJob(
@@ -63,7 +60,7 @@ export async function submitCandidateToJob(
     candidateId,
     vendorId: job.vendorId,
     resumeFileId,
-    status: "SUBMITTED",
+    status: "NEW",
     submittedBy: adminUserId,
   };
 
@@ -71,8 +68,8 @@ export async function submitCandidateToJob(
     id: randomUUID(),
     submissionId,
     fromStatus: "INITIAL",
-    toStatus: "SUBMITTED",
-    reason: "Submitted against Job Description by Admin",
+    toStatus: "NEW",
+    reason: "CV uploaded and submitted to Job Description by Admin",
     changedBy: adminUserId,
   };
 
@@ -379,6 +376,23 @@ export async function getResumeStreamForDownload(
     });
     if (!sub) {
       throw new Error("FORBIDDEN: You do not have access to download this resume.");
+    }
+    // Auto-advance status NEW → VIEWED when client opens/downloads the CV
+    if (sub.status === "NEW") {
+      await db.transaction(async (tx) => {
+        await tx
+          .update(candidateSubmissions)
+          .set({ status: "VIEWED" })
+          .where(eq(candidateSubmissions.id, sub.id));
+        await tx.insert(statusHistory).values({
+          id: randomUUID(),
+          submissionId: sub.id,
+          fromStatus: "NEW",
+          toStatus: "VIEWED",
+          reason: "CV opened/downloaded by client",
+          changedBy: userId,
+        });
+      });
     }
   }
 

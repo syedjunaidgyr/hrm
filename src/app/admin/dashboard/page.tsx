@@ -32,9 +32,10 @@ export default async function AdminDashboardPage() {
     closedJobs,
     totalCandidates,
     totalSubmissions,
-    pendingFeedback,
-    shortlistedCount,
-    selectedCount,
+    newCvsCount,
+    interviewScheduledCount,
+    onboardedCount,
+    billedCount,
     rejectedCount,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(vendors).then((res) => Number(res[0]?.count || 0)),
@@ -44,10 +45,11 @@ export default async function AdminDashboardPage() {
     db.select({ count: sql<number>`count(*)` }).from(jobDescriptions).where(eq(jobDescriptions.status, "CLOSED")).then((res) => Number(res[0]?.count || 0)),
     db.select({ count: sql<number>`count(*)` }).from(candidates).then((res) => Number(res[0]?.count || 0)),
     db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).then((res) => Number(res[0]?.count || 0)),
-    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "FEEDBACK_PENDING")).then((res) => Number(res[0]?.count || 0)),
-    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "SHORTLISTED")).then((res) => Number(res[0]?.count || 0)),
-    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "SELECTED")).then((res) => Number(res[0]?.count || 0)),
-    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "REJECTED")).then((res) => Number(res[0]?.count || 0)),
+    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "NEW")).then((res) => Number(res[0]?.count || 0)),
+    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "INTERVIEW_SCHEDULED")).then((res) => Number(res[0]?.count || 0)),
+    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "ONBOARDED")).then((res) => Number(res[0]?.count || 0)),
+    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "BILLED")).then((res) => Number(res[0]?.count || 0)),
+    db.select({ count: sql<number>`count(*)` }).from(candidateSubmissions).where(eq(candidateSubmissions.status, "REJECTED_L1")).then((res) => Number(res[0]?.count || 0)),
   ]);
 
   // Fetch Vendor Performance summary list
@@ -82,23 +84,23 @@ export default async function AdminDashboardPage() {
             {/* Inline KPI Progress Pills Row */}
             <div className="flex items-center gap-2.5 flex-wrap">
               <div className="bg-[#1E1E1E] text-white rounded-full px-5 py-2.5 text-xs font-extrabold shadow-2xs flex items-center gap-2">
-                <span>Active Vendors</span>
+                <span>Active Clients</span>
                 <span className="px-2 py-0.5 rounded-full bg-white/20 text-white font-black">{activeVendors}</span>
               </div>
 
               <div className="bg-[#FDD868] text-slate-900 rounded-full px-5 py-2.5 text-xs font-black shadow-2xs flex items-center gap-2">
-                <span>Selected & Placed</span>
-                <span className="px-2 py-0.5 rounded-full bg-black/10 text-slate-900 font-extrabold">{selectedCount}</span>
+                <span>Onboarded</span>
+                <span className="px-2 py-0.5 rounded-full bg-black/10 text-slate-900 font-extrabold">{onboardedCount}</span>
               </div>
 
               <div className="border border-slate-300/80 bg-white text-slate-800 rounded-full px-5 py-2.5 text-xs font-extrabold shadow-2xs flex items-center gap-2">
-                <span>Submitted JDs</span>
+                <span>Active JDs</span>
                 <span className="font-black text-[#1A1A1A]">{submittedJobs}</span>
               </div>
 
               <div className="border border-slate-300/80 bg-white text-slate-800 rounded-full px-5 py-2.5 text-xs font-extrabold shadow-2xs flex items-center gap-2">
-                <span>Shortlisted</span>
-                <span className="font-black text-[#1A1A1A]">{shortlistedCount}</span>
+                <span>Interviews Scheduled</span>
+                <span className="font-black text-[#1A1A1A]">{interviewScheduledCount}</span>
               </div>
             </div>
           </div>
@@ -108,7 +110,7 @@ export default async function AdminDashboardPage() {
             <div className="text-center">
               <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-0.5">
                 <Building2 className="w-4 h-4" />
-                <span className="text-[10px] font-extrabold uppercase tracking-wider">Vendors</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider">Clients</span>
               </div>
               <span className="text-3xl sm:text-4xl font-black text-[#1A1A1A] tracking-tight">{totalVendors}</span>
             </div>
@@ -213,8 +215,8 @@ export default async function AdminDashboardPage() {
             {/* Vendor List Widget */}
             <div className="bg-white rounded-[32px] p-6 border border-slate-200/60 shadow-2xs space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-extrabold text-[#1A1A1A]">Vendor Partners Performance</h3>
-                <Link href="/admin/vendors" className="text-xs font-bold text-[#0C54D9] hover:underline">
+                <h3 className="text-base font-extrabold text-[#1A1A1A]">Client Performance</h3>
+                <Link href="/admin/clients" className="text-xs font-bold text-[#0C54D9] hover:underline">
                   View All ({vendorPerformanceList.length}) →
                 </Link>
               </div>
@@ -252,11 +254,11 @@ export default async function AdminDashboardPage() {
 
               <div>
                 <div className="flex items-baseline gap-3">
-                  <span className="text-4xl font-black text-white">{selectedCount}</span>
-                  <span className="text-emerald-400 font-bold text-sm">↗ {shortlistedCount}</span>
-                  <span className="text-slate-400 font-bold text-sm">↘</span>
+                  <span className="text-4xl font-black text-white">{onboardedCount}</span>
+                  <span className="text-emerald-400 font-bold text-sm">↗ {interviewScheduledCount}</span>
+                  <span className="text-slate-400 font-bold text-sm">↘ {rejectedCount}</span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">Shortlisted & Selected Rate</p>
+                <p className="text-[11px] text-slate-400 mt-1">Onboarded · Interviews · Rejected</p>
               </div>
 
               {/* Crextio Dot Matrix Activity Heatmap */}

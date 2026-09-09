@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Bell, LogOut, Briefcase, CheckCheck, Settings, Search } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 
@@ -16,7 +16,6 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ user }) => {
-  const router = useRouter();
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
@@ -41,9 +40,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user }) => {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore network errors — still redirect
+    }
+    // Hard redirect so the browser reloads fully with the cleared cookie
+    window.location.href = "/login";
   };
 
   const handleMarkAllRead = async () => {
@@ -64,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user }) => {
 
   const adminNavItems = [
     { label: "Dashboard", href: "/admin/dashboard" },
-    { label: "Vendors", href: "/admin/vendors" },
+    { label: "Clients", href: "/admin/clients" },
     { label: "Jobs", href: "/admin/jobs" },
     { label: "Candidates", href: "/admin/candidates" },
     { label: "Submissions", href: "/admin/submissions" },
@@ -73,8 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user }) => {
   ];
 
   const vendorNavItems = [
-    { label: "Dashboard", href: "/vendor/dashboard" },
-    { label: "My Jobs", href: "/vendor/jobs" },
+    { label: "Job Descriptions", href: "/vendor/jobs" },
     { label: "Create JD", href: "/vendor/jobs/new" },
     { label: "Candidates", href: "/vendor/candidates" },
   ];
@@ -88,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user }) => {
         <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3" />
         <input
           type="text"
-          placeholder="Search candidate, job description, or vendor..."
+          placeholder="Search job description, candidate..."
           className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300/80 rounded-full text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-400 shadow-2xs"
         />
       </div>

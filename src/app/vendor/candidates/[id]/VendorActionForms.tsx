@@ -22,8 +22,8 @@ export const VendorActionForms: React.FC<VendorActionFormsProps> = ({
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; title: string; message?: string } | null>(null);
 
-  // Status transition form state
-  const [targetStatus, setTargetStatus] = useState("SHORTLISTED");
+  // Status transition form state — new 10-state lifecycle
+  const [targetStatus, setTargetStatus] = useState("VIEWED");
   const [statusReason, setStatusReason] = useState("");
 
   // Structured Feedback form state
@@ -107,17 +107,18 @@ export const VendorActionForms: React.FC<VendorActionFormsProps> = ({
         <form onSubmit={handleStatusUpdate} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Select
-              label="Transition to Status"
+              label="Update Status To"
               value={targetStatus}
               onChange={(e) => setTargetStatus(e.target.value)}
               options={[
-                { value: "UNDER_REVIEW", label: "Under Review" },
-                { value: "SHORTLISTED", label: "Shortlisted" },
+                { value: "VIEWED", label: "Viewed" },
+                { value: "REJECTED_L1", label: "Rejected (Initial)" },
                 { value: "INTERVIEW_SCHEDULED", label: "Interview Scheduled" },
-                { value: "INTERVIEWED", label: "Interviewed" },
-                { value: "SELECTED", label: "Selected" },
-                { value: "REJECTED", label: "Rejected / Not Selected" },
-                { value: "ON_HOLD", label: "On Hold" },
+                { value: "INTERVIEW_COMPLETED", label: "Interview Completed" },
+                { value: "REJECTED_L2", label: "Rejected (Post-Interview)" },
+                { value: "PROGRESSED", label: "Progressed" },
+                { value: "ONBOARDED", label: "Onboarded" },
+                { value: "BILLED", label: "Billed" },
               ]}
             />
             <Textarea
