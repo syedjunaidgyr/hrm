@@ -12,6 +12,9 @@ import { notifications } from "./notifications";
 import { auditLogs } from "./audit-logs";
 import { projects } from "./projects";
 import { disciplines } from "./disciplines";
+import { statusMasters } from "./status-masters";
+import { jobTitles } from "./job-titles";
+import { userProjects } from "./user-projects";
 
 export * from "./vendors";
 export * from "./users";
@@ -26,6 +29,9 @@ export * from "./notifications";
 export * from "./audit-logs";
 export * from "./projects";
 export * from "./disciplines";
+export * from "./status-masters";
+export * from "./job-titles";
+export * from "./user-projects";
 
 // Drizzle Relations
 export const vendorsRelations = relations(vendors, ({ many }) => ({
@@ -33,6 +39,7 @@ export const vendorsRelations = relations(vendors, ({ many }) => ({
   jobDescriptions: many(jobDescriptions),
   submissions: many(candidateSubmissions),
   projects: many(projects),
+  statusMasters: many(statusMasters),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -41,10 +48,29 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [vendors.id],
   }),
   jobDescriptions: many(jobDescriptions),
+  userProjects: many(userProjects),
 }));
 
 export const disciplinesRelations = relations(disciplines, ({ many }) => ({
   jobDescriptions: many(jobDescriptions),
+}));
+
+export const statusMastersRelations = relations(statusMasters, ({ one }) => ({
+  client: one(vendors, {
+    fields: [statusMasters.clientId],
+    references: [vendors.id],
+  }),
+}));
+
+export const userProjectsRelations = relations(userProjects, ({ one }) => ({
+  user: one(users, {
+    fields: [userProjects.userId],
+    references: [users.id],
+  }),
+  project: one(projects, {
+    fields: [userProjects.projectId],
+    references: [projects.id],
+  }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -60,6 +86,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   commentsCreated: many(comments),
   notifications: many(notifications),
   auditLogs: many(auditLogs),
+  userProjects: many(userProjects),
 }));
 
 export const jobDescriptionsRelations = relations(jobDescriptions, ({ one, many }) => ({

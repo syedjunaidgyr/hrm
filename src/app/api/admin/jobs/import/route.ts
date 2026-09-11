@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
 
       // Status
       const statusRaw = pickCell(row, "Status", "status").toUpperCase();
-      const status = ["PENDING", "WIP", "COMPLETED", "CANCELLED"].includes(statusRaw) ? statusRaw : "PENDING";
+      const status = ["PENDING", "WIP", "ON_HOLD", "COMPLETED", "CANCELLED"].includes(statusRaw) ? statusRaw : "PENDING";
 
       // Numbers
       const numPositions = parseInt(pickCell(row, "Positions", "No of Positions", "num_positions") || "1", 10) || 1;

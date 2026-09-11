@@ -18,6 +18,7 @@ export const JobForm: React.FC = () => {
   const [toast, setToast] = useState<{ type: "success" | "error"; title: string; message?: string } | null>(null);
   const [disciplines, setDisciplines] = useState<DropdownItem[]>([]);
   const [projects, setProjects] = useState<DropdownItem[]>([]);
+  const [jobTitles, setJobTitles] = useState<DropdownItem[]>([]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -53,6 +54,7 @@ export const JobForm: React.FC = () => {
         if (data.success) {
           setDisciplines(data.disciplines ?? []);
           setProjects(data.projects ?? []);
+          setJobTitles(data.jobTitles ?? []);
         }
       });
   }, []);
@@ -160,7 +162,15 @@ export const JobForm: React.FC = () => {
             required
             value={formData.title}
             onChange={(e) => set("title", e.target.value)}
+            list="vendor-job-title-list"
           />
+          {jobTitles.length > 0 && (
+            <datalist id="vendor-job-title-list">
+              {jobTitles.map((t) => (
+                <option key={t.id} value={t.name} />
+              ))}
+            </datalist>
+          )}
 
           {/* Discipline dropdown */}
           {disciplines.length > 0 ? (

@@ -4,7 +4,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { getSubmissions } from "@/services/submission.service";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
-import { Eye, Download, Star } from "lucide-react";
+import { Eye } from "lucide-react";
+import { getClientProjectScope } from "@/lib/auth/project-scope";
 
 export default async function VendorCandidatesPage({
   searchParams,
@@ -14,25 +15,27 @@ export default async function VendorCandidatesPage({
   const user = await requireVendor();
   const vendorId = user.vendorId!;
   const params = await searchParams;
+  const scope = await getClientProjectScope(user);
 
   const status = params.status || "ALL";
   const page = parseInt(params.page || "1", 10);
 
-  // Vendor-isolated candidate submissions query
-  const { submissions, total, totalPages } = await getSubmissions({
+  const { submissions } = await getSubmissions({
     vendorId,
     status,
     page,
     limit: 25,
+    restrictToProjects: !scope.all,
+    projectIds: scope.projectIds,
   });
 
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Candidates Submitted for My Jobs</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Candidates</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Review candidate profiles submitted by Admin, view resumes, submit structured feedback, and update recruitment status.
+            Review candidate profiles submitted by Admin for your assigned projects.
           </p>
         </div>
 
@@ -66,7 +69,9 @@ export default async function VendorCandidatesPage({
                         <td className="px-4 py-3.5 font-bold text-slate-900">
                           <div>
                             <span>{sub.candidate.name}</span>
-                            <p className="text-xs text-slate-500 font-normal">{sub.candidate.currentCompany || "N/A"}</p>
+                            <p className="text-xs text-slate-500 font-normal">
+                              {sub.candidate.currentCompany || "N/A"}
+                            </p>
                           </div>
                         </td>
                         <td className="px-4 py-3.5 text-xs">
@@ -83,7 +88,7 @@ export default async function VendorCandidatesPage({
                           {new Date(sub.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3.5">
-                          <Badge status={sub.status}>{sub.status}</Badge>
+                          <Badge status={sub.status}>{sub.status.replace(/_/g, " ")}</Badge>
                         </td>
                         <td className="px-4 py-3.5 text-xs text-slate-600">
                           {lastFb ? (

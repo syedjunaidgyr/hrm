@@ -6,8 +6,9 @@ import { CandidateModalForm } from "@/app/admin/candidates/CandidateModalForm";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
-import { ArrowLeft, Users, Calendar, FolderOpen, Tag, Pencil } from "lucide-react";
+import { ArrowLeft, Users, Pencil } from "lucide-react";
 import { ResumePreviewModal } from "@/components/ui/ResumePreviewModal";
+import { NotifyClientSubmissions } from "@/components/admin/NotifyClientSubmissions";
 
 export default async function AdminJobDetailPage({
   params,
@@ -27,10 +28,26 @@ export default async function AdminJobDetailPage({
     (job as any).discipline?.name ?? job.department ?? "—";
   const projectName = (job as any).project?.name ?? "—";
 
+  const submissionRows = job.submissions.map((sub) => ({
+    id: sub.id,
+    status: sub.status,
+    notifiedAt: (sub as any).notifiedAt ?? null,
+    candidate: {
+      id: sub.candidate.id,
+      name: sub.candidate.name,
+      email: sub.candidate.email,
+      phone: sub.candidate.phone,
+      totalExperience: sub.candidate.totalExperience,
+      skills: sub.candidate.skills,
+    },
+    resumeFile: sub.resumeFile
+      ? { id: sub.resumeFile.id, fileName: sub.resumeFile.fileName }
+      : null,
+  }));
+
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
@@ -51,9 +68,12 @@ export default async function AdminJobDetailPage({
               <p className="text-xs text-slate-500 mt-1">
                 Client: <strong className="text-slate-800">{job.vendor.name}</strong>
                 {projectName !== "—" && (
-                  <> • Project: <strong className="text-slate-800">{projectName}</strong></>
-                )}
-                {" "}• Discipline: <strong className="text-slate-800">{disciplineName}</strong>
+                  <>
+                    {" "}
+                    • Project: <strong className="text-slate-800">{projectName}</strong>
+                  </>
+                )}{" "}
+                • Discipline: <strong className="text-slate-800">{disciplineName}</strong>
               </p>
             </div>
           </div>
@@ -68,9 +88,7 @@ export default async function AdminJobDetailPage({
           </div>
         </div>
 
-        {/* Details Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left — spec */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader title="Job Specification & Requirements" />
@@ -83,7 +101,6 @@ export default async function AdminJobDetailPage({
                     {job.description}
                   </p>
                 </div>
-
                 {job.responsibilities && (
                   <div>
                     <h4 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-500 mb-1">
@@ -94,7 +111,6 @@ export default async function AdminJobDetailPage({
                     </p>
                   </div>
                 )}
-
                 {job.requirements && (
                   <div>
                     <h4 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-500 mb-1">
@@ -105,7 +121,6 @@ export default async function AdminJobDetailPage({
                     </p>
                   </div>
                 )}
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div>
                     <h4 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-500">
@@ -130,7 +145,6 @@ export default async function AdminJobDetailPage({
             </Card>
           </div>
 
-          {/* Right — summary */}
           <div className="lg:col-span-1 space-y-6">
             <Card>
               <CardHeader title="Overview" />
@@ -178,7 +192,6 @@ export default async function AdminJobDetailPage({
           </div>
         </div>
 
-        {/* Submitted CVs */}
         <Card>
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
             <div>
@@ -186,84 +199,110 @@ export default async function AdminJobDetailPage({
                 <Users className="w-5 h-5 text-slate-400" />
                 Submitted CVs ({job.submissions.length})
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Candidates submitted for this JD.</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Select CVs and click Notify Client to email the client contact.
+              </p>
             </div>
             <CandidateModalForm jobs={formattedJobs} defaultJobId={job.id} buttonLabel="Submit CV" />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase font-semibold text-[11px] tracking-wide">
-                  <th className="py-2.5 px-3">Candidate</th>
-                  <th className="py-2.5 px-3">Experience</th>
-                  <th className="py-2.5 px-3">Skills</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3">Resume</th>
-                  <th className="py-2.5 px-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {job.submissions.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-10 text-center text-slate-500 font-medium">
-                      No CVs submitted yet. Click "Submit CV" above.
-                    </td>
-                  </tr>
-                ) : (
-                  job.submissions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-slate-50">
-                      <td className="py-3 px-3 font-bold text-slate-900">
-                        <div>
-                          <Link
-                            href={`/admin/candidates/${sub.candidate.id}`}
-                            className="text-blue-600 hover:underline font-bold"
-                          >
-                            {sub.candidate.name}
-                          </Link>
-                          <p className="text-[11px] text-slate-500 font-normal">
-                            {sub.candidate.email} • {sub.candidate.phone}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 font-semibold text-slate-800">
-                        {sub.candidate.totalExperience} Yrs
-                      </td>
-                      <td className="py-3 px-3 text-slate-600 max-w-xs truncate">
-                        {sub.candidate.skills}
-                      </td>
-                      <td className="py-3 px-3">
-                        <Badge status={sub.status}>
-                          {sub.status.replace(/_/g, " ")}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-3">
-                        {sub.resumeFile ? (
-                          <ResumePreviewModal
-                            fileId={sub.resumeFile.id}
-                            fileName={sub.resumeFile.fileName}
-                            candidateName={sub.candidate.name}
-                            triggerLabel="Preview"
-                            triggerVariant="link"
-                          />
-                        ) : (
-                          <span className="text-slate-400">N/A</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <Link
-                          href={`/admin/candidates/${sub.candidate.id}`}
-                          className="text-[11px] font-bold text-blue-600 hover:underline"
-                        >
-                          Timeline →
-                        </Link>
-                      </td>
+          <NotifyClientSubmissions submissions={submissionRows}>
+            {({ selected, toggle, toggleAll, allSelected }) => (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 uppercase font-semibold text-[11px] tracking-wide">
+                      <th className="py-2.5 px-3 w-10">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={toggleAll}
+                          aria-label="Select all"
+                        />
+                      </th>
+                      <th className="py-2.5 px-3">Candidate</th>
+                      <th className="py-2.5 px-3">Experience</th>
+                      <th className="py-2.5 px-3">Skills</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3">Notified</th>
+                      <th className="py-2.5 px-3">Resume</th>
+                      <th className="py-2.5 px-3 text-right">Actions</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {submissionRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-10 text-center text-slate-500 font-medium">
+                          No CVs submitted yet. Click &quot;Submit CV&quot; above.
+                        </td>
+                      </tr>
+                    ) : (
+                      submissionRows.map((sub) => (
+                        <tr key={sub.id} className="hover:bg-slate-50">
+                          <td className="py-3 px-3">
+                            <input
+                              type="checkbox"
+                              checked={selected.has(sub.id)}
+                              onChange={() => toggle(sub.id)}
+                              aria-label={`Select ${sub.candidate.name}`}
+                            />
+                          </td>
+                          <td className="py-3 px-3 font-bold text-slate-900">
+                            <div>
+                              <Link
+                                href={`/admin/candidates/${sub.candidate.id}`}
+                                className="text-blue-600 hover:underline font-bold"
+                              >
+                                {sub.candidate.name}
+                              </Link>
+                              <p className="text-[11px] text-slate-500 font-normal">
+                                {sub.candidate.email} • {sub.candidate.phone}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-slate-800">
+                            {sub.candidate.totalExperience} Yrs
+                          </td>
+                          <td className="py-3 px-3 text-slate-600 max-w-xs truncate">
+                            {sub.candidate.skills}
+                          </td>
+                          <td className="py-3 px-3">
+                            <Badge status={sub.status}>{sub.status.replace(/_/g, " ")}</Badge>
+                          </td>
+                          <td className="py-3 px-3 text-slate-500">
+                            {sub.notifiedAt
+                              ? new Date(sub.notifiedAt).toLocaleDateString()
+                              : "—"}
+                          </td>
+                          <td className="py-3 px-3">
+                            {sub.resumeFile ? (
+                              <ResumePreviewModal
+                                fileId={sub.resumeFile.id}
+                                fileName={sub.resumeFile.fileName}
+                                candidateName={sub.candidate.name}
+                                triggerLabel="Preview"
+                                triggerVariant="link"
+                              />
+                            ) : (
+                              <span className="text-slate-400">N/A</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <Link
+                              href={`/admin/candidates/${sub.candidate.id}`}
+                              className="text-[11px] font-bold text-blue-600 hover:underline"
+                            >
+                              Timeline →
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </NotifyClientSubmissions>
         </Card>
       </div>
     </DashboardLayout>

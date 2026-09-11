@@ -3,26 +3,43 @@ import { requireVendor } from "@/lib/auth/session";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { getJobs } from "@/services/job.service";
 import { db } from "@/db";
-import { disciplines, projects } from "@/db/schema";
+import { disciplines, projects, jobTitles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ClientJobTable } from "./ClientJobTable";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { getClientProjectScope } from "@/lib/auth/project-scope";
+import { getStatuses } from "@/services/status.service";
 
 export default async function VendorJobsPage() {
   const user = await requireVendor();
   const vendorId = user.vendorId!;
+  const scope = await getClientProjectScope(user);
 
-  const [{ jobs }, disciplineList, projectList] = await Promise.all([
-    getJobs({ vendorId, limit: 200 }),
+  const [{ jobs }, disciplineList, projectList, jdStatuses, jobTitleList] = await Promise.all([
+    getJobs({
+      vendorId,
+      limit: 200,
+      restrictToProjects: !scope.all,
+      projectIds: scope.projectIds,
+    }),
     db.query.disciplines.findMany({ orderBy: (t, { asc }) => [asc(t.name)] }),
     db.query.projects.findMany({
       where: eq(projects.clientId, vendorId),
       orderBy: (t, { asc }) => [asc(t.name)],
     }),
+    getStatuses("JD", { clientId: vendorId }),
+    db.query.jobTitles.findMany({
+      where: eq(jobTitles.status, "ACTIVE"),
+      orderBy: (t, { asc }) => [asc(t.name)],
+      columns: { id: true, name: true },
+    }),
   ]);
 
-  // Normalise jobs to the shape ClientJobTable expects
+  const scopedProjects = scope.all
+    ? projectList
+    : projectList.filter((p) => scope.projectIds.includes(p.id));
+
   const tableJobs = jobs.map((job) => ({
     id: job.id,
     jobCode: job.jobCode,
@@ -49,13 +66,13 @@ export default async function VendorJobsPage() {
   }));
 
   return (
-    <DashboardLayout user={user}>
+    <DashboardLayout user={user} hideSidebar>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Job Descriptions</h2>
             <p className="text-sm text-slate-500 mt-1">
-              All active Job Descriptions assigned to your account.
+              Job Descriptions for your assigned projects.
             </p>
           </div>
           <Link
@@ -69,7 +86,9 @@ export default async function VendorJobsPage() {
         <ClientJobTable
           jobs={tableJobs}
           disciplines={disciplineList.map((d) => ({ id: d.id, name: d.name }))}
-          projects={projectList.map((p) => ({ id: p.id, name: p.name }))}
+          projects={scopedProjects.map((p) => ({ id: p.id, name: p.name }))}
+          jdStatuses={jdStatuses.map((s) => ({ code: s.code, description: s.description }))}
+          jobTitles={jobTitleList}
         />
       </div>
     </DashboardLayout>

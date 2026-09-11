@@ -4,7 +4,7 @@ import { loginUser } from "@/services/auth.service";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, next } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -18,11 +18,21 @@ export async function POST(request: Request) {
 
     const user = await loginUser(email, password, clientIp, userAgent);
 
+    const defaultRedirect = user.role === "ADMIN" ? "/admin/dashboard" : "/vendor/jobs";
+    const safeNext =
+      typeof next === "string" &&
+      next.startsWith("/") &&
+      !next.startsWith("//") &&
+      ((user.role === "ADMIN" && next.startsWith("/admin")) ||
+        (user.role === "VENDOR" && next.startsWith("/vendor")))
+        ? next
+        : defaultRedirect;
+
     return NextResponse.json({
       success: true,
       data: {
         user,
-        redirectTo: user.role === "ADMIN" ? "/admin/dashboard" : "/vendor/dashboard",
+        redirectTo: safeNext,
       },
     });
   } catch (err: any) {

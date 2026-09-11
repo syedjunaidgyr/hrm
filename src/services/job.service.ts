@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { jobDescriptions, NewJobDescription, JobDescription, users } from "@/db/schema";
 import { randomUUID } from "crypto";
-import { eq, and, like, or, sql, desc } from "drizzle-orm";
+import { eq, and, like, or, sql, desc, inArray } from "drizzle-orm";
 import { createAuditLog } from "./audit.service";
 import { createNotification } from "./notification.service";
 
@@ -30,7 +30,7 @@ export interface CreateJobInput {
   dateReceived?: string;
   dateClosed?: string;
   additionalNotes?: string;
-  status: "PENDING" | "WIP" | "CANCELLED" | "COMPLETED" | "DRAFT" | "SUBMITTED";
+  status: string;
 }
 
 export async function createJob(input: CreateJobInput, userId: string, vendorId: string) {
@@ -175,6 +175,10 @@ export async function getJobs(options: {
   search?: string;
   page?: number;
   limit?: number;
+  /** When set, only return JDs whose projectId is in this list. Empty array => no rows. */
+  projectIds?: string[] | null;
+  /** If true with projectIds empty, return no jobs (project-scoped user with no assignments). */
+  restrictToProjects?: boolean;
 }) {
   const page = options.page || 1;
   const limit = options.limit || 25;
@@ -184,6 +188,13 @@ export async function getJobs(options: {
 
   if (options.vendorId) {
     conditions.push(eq(jobDescriptions.vendorId, options.vendorId));
+  }
+
+  if (options.restrictToProjects) {
+    if (!options.projectIds || options.projectIds.length === 0) {
+      return { jobs: [], total: 0, page, limit, totalPages: 0 };
+    }
+    conditions.push(inArray(jobDescriptions.projectId, options.projectIds));
   }
 
   if (options.status && options.status !== "ALL") {
@@ -223,7 +234,7 @@ export async function getJobs(options: {
         project: true,
         discipline: true,
         submissions: {
-          columns: { id: true, status: true },
+          columns: { id: true, status: true, notifiedAt: true },
           with: {
             candidate: {
               columns: { id: true, name: true, currentDesignation: true },
@@ -251,7 +262,11 @@ export async function getJobs(options: {
   };
 }
 
-export async function getJobById(jobId: string, vendorId?: string | null) {
+export async function getJobById(
+  jobId: string,
+  vendorId?: string | null,
+  projectScope?: { all: boolean; projectIds: string[] }
+) {
   const conditions = [eq(jobDescriptions.id, jobId)];
   if (vendorId) {
     conditions.push(eq(jobDescriptions.vendorId, vendorId));
@@ -275,6 +290,12 @@ export async function getJobById(jobId: string, vendorId?: string | null) {
 
   if (!job) {
     throw new Error("NOT_FOUND_OR_FORBIDDEN");
+  }
+
+  if (projectScope && !projectScope.all) {
+    if (!job.projectId || !projectScope.projectIds.includes(job.projectId)) {
+      throw new Error("NOT_FOUND_OR_FORBIDDEN");
+    }
   }
 
   return job;

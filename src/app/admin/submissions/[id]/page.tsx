@@ -38,7 +38,7 @@ export default async function AdminSubmissionDetailPage({
                 <Badge status={sub.status}>{sub.status}</Badge>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Submitted for Job: <strong className="text-slate-800">{sub.job.title}</strong> ({sub.job.jobCode}) • Vendor: <strong className="text-slate-800">{sub.vendor.name}</strong>
+                Submitted for Job: <strong className="text-slate-800">{sub.job.title}</strong> ({sub.job.jobCode}) • Client: <strong className="text-slate-800">{sub.vendor.name}</strong>
               </p>
             </div>
           </div>
@@ -110,7 +110,7 @@ export default async function AdminSubmissionDetailPage({
           <div className="lg:col-span-2 space-y-6">
             {/* Vendor Feedback Section */}
             <Card>
-              <CardHeader title="Vendor Structured Feedback History" />
+              <CardHeader title="Client Structured Feedback History" />
               {sub.feedbackList.length === 0 ? (
                 <p className="text-xs text-slate-500 italic py-4">No vendor feedback submitted yet.</p>
               ) : (
@@ -119,7 +119,7 @@ export default async function AdminSubmissionDetailPage({
                     <div key={fb.id} className="pt-3 first:pt-0 space-y-2 text-xs">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">{fb.author?.name || "Vendor Manager"}</span>
+                          <span className="font-bold text-slate-900">{fb.author?.name || "Client Manager"}</span>
                           <Badge variant="purple">Recommendation: {fb.recommendation}</Badge>
                         </div>
                         <span className="text-slate-400">{new Date(fb.createdAt).toLocaleString()}</span>

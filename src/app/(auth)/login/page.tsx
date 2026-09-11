@@ -13,6 +13,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [nextPath, setNextPath] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      setNextPath(params.get("next"));
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +31,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, next: nextPath }),
       });
 
       const data = await res.json();
@@ -57,13 +65,13 @@ export default function LoginPage() {
           <div className="w-8 h-8 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-xs font-black shadow-2xs">
             <Briefcase className="w-4 h-4" />
           </div>
-          <span className="text-base font-black tracking-tight text-slate-900">RecruitPortal</span>
+          <span className="text-base font-black tracking-tight text-slate-900">Rightfit</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
           Welcome Back
         </h2>
         <p className="mt-1.5 text-xs text-slate-500 font-semibold">
-          Vendor & Candidate Recruitment Portal
+          Client & Candidate Recruitment Portal
         </p>
       </div>
 
@@ -131,7 +139,7 @@ export default function LoginPage() {
               >
                 <UserCheck className="w-4 h-4 text-[#2E7D32] shrink-0" />
                 <div>
-                  <p className="text-xs font-black text-[#1E1E1E] leading-none">Vendor ABC</p>
+                  <p className="text-xs font-black text-[#1E1E1E] leading-none">Client ABC</p>
                   <p className="text-[10px] text-slate-500 font-medium mt-1">vendor_abc@example.com</p>
                 </div>
               </button>

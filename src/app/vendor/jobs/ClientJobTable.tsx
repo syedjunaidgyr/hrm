@@ -46,6 +46,8 @@ interface Props {
   jobs: Job[];
   disciplines: { id: string; name: string }[];
   projects: { id: string; name: string }[];
+  jdStatuses?: { code: string; description: string }[];
+  jobTitles?: { id: string; name: string }[];
 }
 
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey | null; sortDir: SortDir }) {
@@ -54,7 +56,19 @@ function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey | 
   return <ChevronDown className="w-3 h-3 text-slate-700 inline ml-1" />;
 }
 
-export function ClientJobTable({ jobs, disciplines, projects }: Props) {
+export function ClientJobTable({
+  jobs,
+  disciplines,
+  projects,
+  jdStatuses = [
+    { code: "PENDING", description: "Pending" },
+    { code: "WIP", description: "WIP" },
+    { code: "ON_HOLD", description: "On Hold" },
+    { code: "CANCELLED", description: "Cancelled" },
+    { code: "COMPLETED", description: "Completed" },
+  ],
+  jobTitles = [],
+}: Props) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
@@ -63,6 +77,7 @@ export function ClientJobTable({ jobs, disciplines, projects }: Props) {
   const [filterProject, setFilterProject] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
+  const [filterTitle, setFilterTitle] = useState("");
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -91,8 +106,11 @@ export function ClientJobTable({ jobs, disciplines, projects }: Props) {
     if (filterPriority) {
       list = list.filter((j) => j.priority === filterPriority);
     }
+    if (filterTitle) {
+      list = list.filter((j) => j.title === filterTitle);
+    }
     return list;
-  }, [jobs, newCvsOnly, filterDiscipline, filterProject, filterStatus, filterPriority]);
+  }, [jobs, newCvsOnly, filterDiscipline, filterProject, filterStatus, filterPriority, filterTitle]);
 
   const sorted = useMemo(() => {
     if (!sortKey || !sortDir) return filtered;
@@ -129,7 +147,7 @@ export function ClientJobTable({ jobs, disciplines, projects }: Props) {
     </th>
   );
 
-  const activeFilters = [filterDiscipline, filterProject, filterStatus, filterPriority].filter(Boolean).length;
+  const activeFilters = [filterDiscipline, filterProject, filterStatus, filterPriority, filterTitle].filter(Boolean).length;
 
   return (
     <div className="space-y-4">
@@ -137,18 +155,28 @@ export function ClientJobTable({ jobs, disciplines, projects }: Props) {
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Status chips */}
-            {["", "PENDING", "WIP", "CANCELLED", "COMPLETED"].map((s) => (
+            {/* Status chips from masters */}
+            <button
+              onClick={() => setFilterStatus("")}
+              className={`px-3 py-1.5 text-xs font-black rounded-full transition-all ${
+                filterStatus === ""
+                  ? "bg-[#1E1E1E] text-white shadow-2xs"
+                  : "bg-white text-slate-600 border border-slate-300/80 hover:bg-slate-50"
+              }`}
+            >
+              All
+            </button>
+            {jdStatuses.map((s) => (
               <button
-                key={s}
-                onClick={() => setFilterStatus(s)}
+                key={s.code}
+                onClick={() => setFilterStatus(s.code)}
                 className={`px-3 py-1.5 text-xs font-black rounded-full transition-all ${
-                  filterStatus === s
+                  filterStatus === s.code
                     ? "bg-[#1E1E1E] text-white shadow-2xs"
                     : "bg-white text-slate-600 border border-slate-300/80 hover:bg-slate-50"
                 }`}
               >
-                {s === "" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
+                {s.description}
               </button>
             ))}
           </div>
@@ -194,6 +222,21 @@ export function ClientJobTable({ jobs, disciplines, projects }: Props) {
               ))}
             </select>
           )}
+          {(jobTitles.length > 0 || jobs.length > 0) && (
+            <select
+              value={filterTitle}
+              onChange={(e) => setFilterTitle(e.target.value)}
+              className="text-xs font-semibold border border-slate-200 rounded-full px-3 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-slate-400 max-w-[220px]"
+            >
+              <option value="">All Job Titles</option>
+              {(jobTitles.length
+                ? jobTitles.map((t) => t.name)
+                : Array.from(new Set(jobs.map((j) => j.title)))
+              ).map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          )}
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
@@ -206,7 +249,13 @@ export function ClientJobTable({ jobs, disciplines, projects }: Props) {
           </select>
           {activeFilters > 0 && (
             <button
-              onClick={() => { setFilterDiscipline(""); setFilterProject(""); setFilterPriority(""); }}
+              onClick={() => {
+                setFilterDiscipline("");
+                setFilterProject("");
+                setFilterPriority("");
+                setFilterTitle("");
+                setFilterStatus("");
+              }}
               className="text-xs font-bold text-rose-500 hover:underline"
             >
               Clear filters ({activeFilters})

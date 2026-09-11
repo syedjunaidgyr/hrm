@@ -64,6 +64,14 @@ export const EditJobForm: React.FC<Props> = ({
   const [toast, setToast] = useState<{ type: "success" | "error"; title: string; message?: string } | null>(null);
   const [disciplines, setDisciplines] = useState<DropdownItem[]>([]);
   const [projects, setProjects] = useState<DropdownItem[]>([]);
+  const [jobTitles, setJobTitles] = useState<DropdownItem[]>([]);
+  const [jdStatuses, setJdStatuses] = useState<{ code: string; description: string }[]>([
+    { code: "PENDING", description: "Pending" },
+    { code: "WIP", description: "WIP" },
+    { code: "ON_HOLD", description: "On Hold" },
+    { code: "COMPLETED", description: "Completed" },
+    { code: "CANCELLED", description: "Cancelled" },
+  ]);
 
   const toDateInput = (val: string | null | undefined) => {
     if (!val) return "";
@@ -104,6 +112,8 @@ export const EditJobForm: React.FC<Props> = ({
         if (data.success) {
           setDisciplines(data.disciplines ?? []);
           setProjects(data.projects ?? []);
+          setJobTitles(data.jobTitles ?? []);
+          if (data.jdStatuses?.length) setJdStatuses(data.jdStatuses);
         }
       });
   }, []);
@@ -181,6 +191,17 @@ export const EditJobForm: React.FC<Props> = ({
         {/* Core fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label="Job Title *" required value={form.title} onChange={(e) => set("title", e.target.value)} />
+          {jobTitles.length > 0 && (
+            <Select
+              label="Or pick from Job Titles"
+              value={jobTitles.some((t) => t.name === form.title) ? form.title : ""}
+              onChange={(e) => e.target.value && set("title", e.target.value)}
+              options={[
+                { value: "", label: "— Select from master —" },
+                ...jobTitles.map((t) => ({ value: t.name, label: t.name })),
+              ]}
+            />
+          )}
 
           {disciplines.length > 0 ? (
             <Select
@@ -226,7 +247,7 @@ export const EditJobForm: React.FC<Props> = ({
           />
           {showStatus && (
             <Select label="Status" value={form.status} onChange={(e) => set("status", e.target.value)}
-              options={[{ value: "PENDING", label: "Pending" }, { value: "WIP", label: "WIP" }, { value: "COMPLETED", label: "Completed" }, { value: "CANCELLED", label: "Cancelled" }]}
+              options={jdStatuses.map((s) => ({ value: s.code, label: s.description }))}
             />
           )}
         </div>

@@ -10,16 +10,21 @@ interface DashboardLayoutProps {
   user: SessionUser;
   vendorName?: string;
   children: React.ReactNode;
+  /** Hide left sidebar (used on client JD landing). */
+  hideSidebar?: boolean;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, vendorName, children }) => {
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
+  user,
+  vendorName,
+  children,
+  hideSidebar = false,
+}) => {
   const isAdmin = user.role === "ADMIN";
   const isVendor = user.role === "VENDOR";
 
   const storageKey = isAdmin ? "admin_sidebar_collapsed" : "vendor_sidebar_collapsed";
 
-  // Desktop: restore collapsed state from localStorage (default: expanded).
-  // Mobile: sidebar starts closed and slides in as overlay.
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -43,7 +48,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ user, vendorNa
     onToggle: handleDesktopToggle,
   };
 
-  const showSidebar = isAdmin || isVendor;
+  const showSidebar = (isAdmin || isVendor) && !hideSidebar;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F3ED] text-[#1A1A1A] p-3 sm:p-5 lg:p-6 font-sans">

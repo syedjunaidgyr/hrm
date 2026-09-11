@@ -33,6 +33,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle 
     { label: "Candidates", href: "/admin/candidates", icon: Users },
     { label: "Submissions", href: "/admin/submissions", icon: Send },
     { label: "Disciplines", href: "/admin/disciplines", icon: Tag },
+    { label: "Job Titles", href: "/admin/job-titles", icon: Tag },
+    { label: "Status Masters", href: "/admin/status-masters", icon: Tag },
     { label: "Analytics & Reports", href: "/admin/reports", icon: BarChart3 },
     { label: "System Audit Logs", href: "/admin/audit-logs", icon: ShieldAlert },
   ];

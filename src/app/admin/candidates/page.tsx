@@ -23,9 +23,11 @@ export default async function AdminCandidatesPage({
   const jobId = params.jobId || "";
 
   const { candidates, total, totalPages } = await getCandidates({ search, page, limit: 25 });
-  const { jobs } = await getJobs({ status: "SUBMITTED", limit: 100 });
+  const { jobs } = await getJobs({ status: "PENDING", limit: 100 });
+  const { jobs: wipJobs } = await getJobs({ status: "WIP", limit: 100 });
+  const allOpenJobs = [...jobs, ...wipJobs];
 
-  const formattedJobs = jobs.map((j) => ({
+  const formattedJobs = allOpenJobs.map((j) => ({
     id: j.id,
     title: j.title,
     jobCode: j.jobCode,
@@ -37,9 +39,9 @@ export default async function AdminCandidatesPage({
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Candidate Pool & Management</h2>
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Candidates</h2>
             <p className="text-sm text-slate-500 mt-1">
-              Create candidates, upload resumes, and submit candidates directly against Vendor Job Descriptions.
+              Create candidates, upload resumes, and submit candidates against Client Job Descriptions.
             </p>
           </div>
           <CandidateModalForm jobs={formattedJobs} defaultJobId={jobId} />

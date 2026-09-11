@@ -19,6 +19,14 @@ export const AdminJobForm: React.FC<{ clients: Client[] }> = ({ clients }) => {
   const [toast, setToast] = useState<{ type: "success" | "error"; title: string; message?: string } | null>(null);
   const [disciplines, setDisciplines] = useState<DropdownItem[]>([]);
   const [projects, setProjects] = useState<DropdownItem[]>([]);
+  const [jobTitles, setJobTitles] = useState<DropdownItem[]>([]);
+  const [jdStatuses, setJdStatuses] = useState<{ code: string; description: string }[]>([
+    { code: "PENDING", description: "Pending" },
+    { code: "WIP", description: "WIP" },
+    { code: "ON_HOLD", description: "On Hold" },
+    { code: "COMPLETED", description: "Completed" },
+    { code: "CANCELLED", description: "Cancelled" },
+  ]);
 
   const [formData, setFormData] = useState({
     vendorId: "",
@@ -53,6 +61,8 @@ export const AdminJobForm: React.FC<{ clients: Client[] }> = ({ clients }) => {
         if (data.success) {
           setDisciplines(data.disciplines ?? []);
           setProjects(data.projects ?? []);
+          setJobTitles(data.jobTitles ?? []);
+          if (data.jdStatuses?.length) setJdStatuses(data.jdStatuses);
         }
       });
   }, []);
@@ -129,7 +139,19 @@ export const AdminJobForm: React.FC<{ clients: Client[] }> = ({ clients }) => {
               ...clients.map((c) => ({ value: c.id, label: `${c.name} (${c.code})` })),
             ]}
           />
-          <Input label="Job Title *" required value={formData.title} onChange={(e) => set("title", e.target.value)} />
+          {jobTitles.length > 0 ? (
+            <Select
+              label="Job Title *"
+              value={formData.title}
+              onChange={(e) => set("title", e.target.value)}
+              options={[
+                { value: "", label: "— Select Job Title —" },
+                ...jobTitles.map((t) => ({ value: t.name, label: t.name })),
+              ]}
+            />
+          ) : (
+            <Input label="Job Title *" required value={formData.title} onChange={(e) => set("title", e.target.value)} />
+          )}
 
           {disciplines.length > 0 ? (
             <Select
@@ -174,7 +196,7 @@ export const AdminJobForm: React.FC<{ clients: Client[] }> = ({ clients }) => {
             options={[{ value: "LOW", label: "Low" }, { value: "MEDIUM", label: "Medium" }, { value: "HIGH", label: "High" }, { value: "URGENT", label: "Urgent" }]}
           />
           <Select label="Status" value={formData.status} onChange={(e) => set("status", e.target.value)}
-            options={[{ value: "PENDING", label: "Pending" }, { value: "WIP", label: "WIP" }, { value: "COMPLETED", label: "Completed" }, { value: "CANCELLED", label: "Cancelled" }]}
+            options={jdStatuses.map((s) => ({ value: s.code, label: s.description }))}
           />
         </div>
 

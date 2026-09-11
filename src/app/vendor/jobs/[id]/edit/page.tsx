@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { getJobById } from "@/services/job.service";
 import { EditJobForm } from "@/components/forms/EditJobForm";
 import { notFound } from "next/navigation";
+import { getClientProjectScope } from "@/lib/auth/project-scope";
 
 export default async function VendorEditJobPage({
   params,
@@ -11,10 +12,11 @@ export default async function VendorEditJobPage({
 }) {
   const user = await requireVendor();
   const { id: jobId } = await params;
+  const scope = await getClientProjectScope(user);
 
   let job;
   try {
-    job = await getJobById(jobId, user.vendorId);
+    job = await getJobById(jobId, user.vendorId, scope);
   } catch {
     notFound();
   }

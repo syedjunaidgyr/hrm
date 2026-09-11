@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Download, ArrowLeft, Star, Clock, FileText } from "lucide-react";
 
 import { ResumePreviewModal } from "@/components/ui/ResumePreviewModal";
+import { getClientProjectScope } from "@/lib/auth/project-scope";
 
 export default async function VendorCandidateDetailPage({
   params,
@@ -17,9 +18,9 @@ export default async function VendorCandidateDetailPage({
 }) {
   const user = await requireVendor();
   const { id: submissionId } = await params;
+  const scope = await getClientProjectScope(user);
 
-  // Strict Vendor query-level IDOR protection
-  const sub = await getSubmissionById(submissionId, user.role, user.vendorId);
+  const sub = await getSubmissionById(submissionId, user.role, user.vendorId, scope);
 
   return (
     <DashboardLayout user={user}>

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { getResumeStreamForDownload } from "@/services/submission.service";
 import mammoth from "mammoth";
 import { Readable } from "stream";
+import { getClientProjectScope } from "@/lib/auth/project-scope";
 
 async function streamToBuffer(stream: Readable): Promise<Buffer> {
   const chunks: Buffer[] = [];
@@ -31,7 +32,8 @@ export async function GET(
       fileId,
       session.id,
       session.role,
-      session.vendorId
+      session.vendorId,
+      session.role === "VENDOR" ? await getClientProjectScope(session) : undefined
     );
 
     const ext = fileRecord.fileName.substring(fileRecord.fileName.lastIndexOf(".")).toLowerCase();

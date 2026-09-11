@@ -35,7 +35,7 @@ export default async function AdminSubmissionsPage({
                 <tr>
                   <th className="px-4 py-3.5">Candidate</th>
                   <th className="px-4 py-3.5">Job Description</th>
-                  <th className="px-4 py-3.5">Vendor</th>
+                  <th className="px-4 py-3.5">Client</th>
                   <th className="px-4 py-3.5">Current Status</th>
                   <th className="px-4 py-3.5">Last Feedback</th>
                   <th className="px-4 py-3.5">Submitted On</th>

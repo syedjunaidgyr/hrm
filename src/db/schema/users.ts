@@ -1,4 +1,4 @@
-import { mysqlTable, varchar, timestamp, text, index } from "drizzle-orm/mysql-core";
+import { mysqlTable, varchar, timestamp, text, boolean, index } from "drizzle-orm/mysql-core";
 import { vendors } from "./vendors";
 
 export const users = mysqlTable(
@@ -11,6 +11,7 @@ export const users = mysqlTable(
     passwordHash: varchar("password_hash", { length: 255 }).notNull(),
     role: varchar("role", { length: 20 }).notNull().default("VENDOR"), // 'ADMIN' | 'VENDOR'
     status: varchar("status", { length: 20 }).notNull().default("ACTIVE"),
+    accessAllProjects: boolean("access_all_projects").notNull().default(false),
     avatarUrl: text("avatar_url"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),

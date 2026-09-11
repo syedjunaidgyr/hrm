@@ -31,13 +31,13 @@ export const jobDescriptions = mysqlTable(
     requirements: text("requirements"),
     education: varchar("education", { length: 255 }),
     noticePeriod: varchar("notice_period", { length: 100 }),
-    // PENDING (default) | WIP | CANCELLED | COMPLETED
+    // PENDING (default) | WIP | CANCELLED | COMPLETED | ON_HOLD
     priority: varchar("priority", { length: 20 }).notNull().default("MEDIUM"), // LOW | MEDIUM | HIGH | URGENT
     targetJoiningDate: date("target_joining_date"),
     dateReceived: date("date_received"),
     dateClosed: date("date_closed"),
     additionalNotes: text("additional_notes"),
-    status: varchar("status", { length: 20 }).notNull().default("PENDING"), // PENDING | WIP | CANCELLED | COMPLETED
+    status: varchar("status", { length: 20 }).notNull().default("PENDING"), // PENDING | WIP | CANCELLED | COMPLETED | ON_HOLD
     createdBy: varchar("created_by", { length: 36 }).notNull().references(() => users.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),

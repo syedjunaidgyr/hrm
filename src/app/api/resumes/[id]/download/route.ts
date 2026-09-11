@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { getResumeStreamForDownload } from "@/services/submission.service";
+import { getClientProjectScope } from "@/lib/auth/project-scope";
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +22,8 @@ export async function GET(
       fileId,
       session.id,
       session.role,
-      session.vendorId
+      session.vendorId,
+      session.role === "VENDOR" ? await getClientProjectScope(session) : undefined
     );
 
     // Convert NodeJS.Readable stream into ReadableStream for Web Response

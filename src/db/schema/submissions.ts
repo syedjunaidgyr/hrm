@@ -18,9 +18,10 @@ export const candidateSubmissions = mysqlTable(
     vendorId: varchar("vendor_id", { length: 36 }).notNull().references(() => vendors.id),
     resumeFileId: varchar("resume_file_id", { length: 36 }).notNull().references(() => files.id),
     // NEW | VIEWED | REJECTED_L1 | INTERVIEW_SCHEDULED | INTERVIEW_COMPLETED |
-    // INTERVIEW_DATETIME | REJECTED_L2 | PROGRESSED | ONBOARDED | BILLED
+    // REJECTED_L2 | PROGRESSED | ONBOARDED | BILLED | ON_HOLD
     status: varchar("status", { length: 50 }).notNull().default("NEW"),
     interviewDateTime: timestamp("interview_date_time"),
+    notifiedAt: timestamp("notified_at"),
     submittedBy: varchar("submitted_by", { length: 36 }).notNull().references(() => users.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),

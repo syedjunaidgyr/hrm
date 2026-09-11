@@ -1,6 +1,7 @@
 import React from "react";
 import { requireVendor } from "@/lib/auth/session";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { getClientProjectScope } from "@/lib/auth/project-scope";
 import { getJobById } from "@/services/job.service";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -15,8 +16,9 @@ export default async function VendorJobDetailPage({
 }) {
   const user = await requireVendor();
   const { id: jobId } = await params;
+  const scope = await getClientProjectScope(user);
 
-  const job = await getJobById(jobId, user.vendorId);
+  const job = await getJobById(jobId, user.vendorId, scope);
 
   const disciplineName = (job as any).discipline?.name ?? job.department ?? "—";
   const projectName = (job as any).project?.name ?? "—";
