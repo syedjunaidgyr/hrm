@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { ResumePreviewModal } from "@/components/ui/ResumePreviewModal";
+import { CandidateManageActions } from "@/components/admin/CandidateManageActions";
 
 export default async function AdminCandidateDetailPage({
   params,
@@ -63,15 +64,25 @@ export default async function AdminCandidateDetailPage({
             </div>
           </div>
 
-          {primaryResume && (
-            <ResumePreviewModal
-              fileId={primaryResume.id}
-              fileName={primaryResume.fileName}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {primaryResume && (
+              <ResumePreviewModal
+                fileId={primaryResume.id}
+                fileName={primaryResume.fileName}
+                candidateName={cand.name}
+                triggerLabel="View Resume PDF / Document"
+                triggerVariant="primary"
+              />
+            )}
+            <CandidateManageActions
+              candidateId={cand.id}
               candidateName={cand.name}
-              triggerLabel="View Resume PDF / Document"
-              triggerVariant="primary"
+              fileId={primaryResume?.id}
+              hasSubmissions={cand.submissions.length > 0}
+              variant="full"
+              redirectOnDelete="/admin/candidates"
             />
-          )}
+          </div>
         </div>
 
         {/* Master Profile & Recruitment Journey Grid */}

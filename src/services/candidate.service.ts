@@ -1,9 +1,28 @@
 import { db } from "@/db";
-import { candidates, NewCandidate, files, NewFileRecord } from "@/db/schema";
+import {
+  candidates,
+  NewCandidate,
+  files,
+  NewFileRecord,
+  candidateSubmissions,
+  feedback,
+  statusHistory,
+  comments,
+} from "@/db/schema";
 import { randomUUID } from "crypto";
-import { eq, or, like, sql, desc, and } from "drizzle-orm";
-import { getStorageProvider, getStorageProviderName } from "./storage.service";
+import { eq, or, like, sql, desc, and, inArray } from "drizzle-orm";
+import { getStorageProvider, getStorageProviderName, removeStoredFile } from "./storage.service";
 import { createAuditLog } from "./audit.service";
+
+const ALLOWED_RESUME_EXTENSIONS = [".pdf", ".doc", ".docx"];
+
+function assertResumeFileName(fileName: string) {
+  const ext = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+  if (!ALLOWED_RESUME_EXTENSIONS.includes(ext)) {
+    throw new Error("INVALID_FILE_TYPE: Only PDF, DOC, and DOCX resume formats are supported.");
+  }
+  return ext;
+}
 
 export interface CreateCandidateInput {
   name: string;
@@ -31,11 +50,7 @@ export async function createCandidate(input: CreateCandidateInput, adminUserId: 
   const candidateId = randomUUID();
   const fileId = randomUUID();
 
-  const allowedExtensions = [".pdf", ".doc", ".docx"];
-  const ext = input.resumeFileName.substring(input.resumeFileName.lastIndexOf(".")).toLowerCase();
-  if (!allowedExtensions.includes(ext)) {
-    throw new Error("INVALID_FILE_TYPE: Only PDF, DOC, and DOCX resume formats are supported.");
-  }
+  assertResumeFileName(input.resumeFileName);
 
   const storageKey = `resumes/${candidateId}/${randomUUID()}-${input.resumeFileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
   const storageProvider = getStorageProvider();
@@ -194,4 +209,145 @@ export async function getCandidateById(candidateId: string) {
   }
 
   return candidate;
+}
+
+export async function replaceCandidateResume(
+  candidateId: string,
+  input: { resumeBuffer: Buffer; resumeFileName: string; mimeType: string },
+  adminUserId: string
+) {
+  assertResumeFileName(input.resumeFileName);
+
+  const candidate = await db.query.candidates.findFirst({
+    where: eq(candidates.id, candidateId),
+    with: { files: true },
+  });
+  if (!candidate) throw new Error("CANDIDATE_NOT_FOUND");
+
+  const storageKey = `resumes/${candidateId}/${randomUUID()}-${input.resumeFileName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+  const storageProviderName = getStorageProviderName();
+  await getStorageProvider().upload(input.resumeBuffer, storageKey);
+
+  const existing = candidate.files[0];
+
+  if (existing) {
+    const oldKey = existing.storageKey;
+    const oldProvider = existing.storageProvider;
+    await db
+      .update(files)
+      .set({
+        fileName: input.resumeFileName,
+        storageKey,
+        storageProvider: storageProviderName,
+        mimeType: input.mimeType,
+        fileSize: input.resumeBuffer.length,
+        uploadedBy: adminUserId,
+      })
+      .where(eq(files.id, existing.id));
+
+    await removeStoredFile(oldKey, oldProvider);
+    await createAuditLog({
+      userId: adminUserId,
+      action: "REPLACE_RESUME",
+      entityType: "File",
+      entityId: existing.id,
+      oldValue: { fileName: existing.fileName, storageKey: oldKey },
+      newValue: { fileName: input.resumeFileName, storageKey },
+    });
+    return { fileId: existing.id };
+  }
+
+  const fileId = randomUUID();
+  await db.insert(files).values({
+    id: fileId,
+    candidateId,
+    submissionId: null,
+    fileName: input.resumeFileName,
+    storageKey,
+    storageProvider: storageProviderName,
+    mimeType: input.mimeType,
+    fileSize: input.resumeBuffer.length,
+    uploadedBy: adminUserId,
+  });
+  await createAuditLog({
+    userId: adminUserId,
+    action: "UPLOAD_RESUME",
+    entityType: "File",
+    entityId: fileId,
+    newValue: { fileName: input.resumeFileName, storageKey },
+  });
+  return { fileId };
+}
+
+export async function deleteCandidateResume(candidateId: string, adminUserId: string, fileId?: string) {
+  const candidate = await db.query.candidates.findFirst({
+    where: eq(candidates.id, candidateId),
+    with: { files: true },
+  });
+  if (!candidate) throw new Error("CANDIDATE_NOT_FOUND");
+
+  const file = fileId ? candidate.files.find((f) => f.id === fileId) : candidate.files[0];
+  if (!file) throw new Error("RESUME_NOT_FOUND: No resume file to delete.");
+
+  const attached = await db.query.candidateSubmissions.findFirst({
+    where: eq(candidateSubmissions.resumeFileId, file.id),
+  });
+  if (attached) {
+    throw new Error(
+      "RESUME_IN_USE: This resume is attached to a job submission. Replace the resume instead of deleting it, or delete the candidate."
+    );
+  }
+
+  await removeStoredFile(file.storageKey, file.storageProvider);
+  await db.delete(files).where(eq(files.id, file.id));
+  await createAuditLog({
+    userId: adminUserId,
+    action: "DELETE_RESUME",
+    entityType: "File",
+    entityId: file.id,
+    oldValue: { fileName: file.fileName, storageKey: file.storageKey, candidateId },
+  });
+}
+
+export async function deleteCandidate(candidateId: string, adminUserId: string) {
+  const candidate = await db.query.candidates.findFirst({
+    where: eq(candidates.id, candidateId),
+    with: {
+      files: true,
+      submissions: { columns: { id: true } },
+    },
+  });
+  if (!candidate) throw new Error("CANDIDATE_NOT_FOUND");
+
+  const submissionIds = candidate.submissions.map((s) => s.id);
+
+  await db.transaction(async (tx) => {
+    if (submissionIds.length > 0) {
+      await tx.delete(feedback).where(inArray(feedback.submissionId, submissionIds));
+      await tx.delete(statusHistory).where(inArray(statusHistory.submissionId, submissionIds));
+      await tx.delete(comments).where(inArray(comments.submissionId, submissionIds));
+      await tx.delete(candidateSubmissions).where(eq(candidateSubmissions.candidateId, candidateId));
+    }
+
+    if (candidate.files.length > 0) {
+      await tx.delete(files).where(eq(files.candidateId, candidateId));
+    }
+
+    await tx.delete(candidates).where(eq(candidates.id, candidateId));
+
+    await createAuditLog(
+      {
+        userId: adminUserId,
+        action: "DELETE_CANDIDATE",
+        entityType: "Candidate",
+        entityId: candidateId,
+        oldValue: { name: candidate.name, email: candidate.email },
+      },
+      tx
+    );
+  });
+
+  for (const file of candidate.files) {
+    await removeStoredFile(file.storageKey, file.storageProvider);
+  }
 }

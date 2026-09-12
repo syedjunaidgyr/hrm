@@ -111,13 +111,26 @@ export function getStorageProviderName(): string {
   return explicit || "local";
 }
 
-export function getStorageProvider(): StorageProvider {
-  const provider = getStorageProviderName();
-  if (provider === "s3" || provider === "r2") {
-    return new S3StorageProvider();
-  }
-  if (provider === "db") {
-    return new DbStorageProvider();
-  }
+export function getStorageProviderByName(name: string): StorageProvider {
+  if (name === "s3" || name === "r2") return new S3StorageProvider();
+  if (name === "db") return new DbStorageProvider();
   return new LocalStorageProvider();
+}
+
+export function getStorageProvider(): StorageProvider {
+  return getStorageProviderByName(getStorageProviderName());
+}
+
+export async function removeStoredFile(storageKey: string, recordedProvider?: string | null) {
+  const tried = new Set<string>();
+  const names = [recordedProvider, getStorageProviderName(), "db", "local"].filter(Boolean) as string[];
+  for (const name of names) {
+    if (tried.has(name)) continue;
+    tried.add(name);
+    try {
+      await getStorageProviderByName(name).delete(storageKey);
+    } catch {
+      // Missing blob on this backend is fine
+    }
+  }
 }

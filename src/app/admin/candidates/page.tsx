@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Download, FileText, Send } from "lucide-react";
 
 import { ResumePreviewModal } from "@/components/ui/ResumePreviewModal";
+import { CandidateManageActions } from "@/components/admin/CandidateManageActions";
 
 export default async function AdminCandidatesPage({
   searchParams,
@@ -123,7 +124,13 @@ export default async function AdminCandidatesPage({
                           )}
                         </td>
                         <td className="px-4 py-3.5 text-right">
-                          <span className="text-xs text-slate-400">Admin Managed</span>
+                          <CandidateManageActions
+                            candidateId={cand.id}
+                            candidateName={cand.name}
+                            fileId={primaryFile?.id}
+                            hasSubmissions={cand.submissions.length > 0}
+                            variant="compact"
+                          />
                         </td>
                       </tr>
                     );

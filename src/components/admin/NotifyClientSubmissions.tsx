@@ -7,6 +7,7 @@ import { Mail, Loader2 } from "lucide-react";
 import { Toast } from "@/components/ui/Toast";
 import { Badge } from "@/components/ui/Badge";
 import { ResumePreviewModal } from "@/components/ui/ResumePreviewModal";
+import { CandidateManageActions } from "@/components/admin/CandidateManageActions";
 
 interface SubmissionRow {
   id: string;
@@ -183,12 +184,21 @@ export function NotifyClientSubmissions({
                     )}
                   </td>
                   <td className="py-3 px-3 text-right">
-                    <Link
-                      href={`/admin/candidates/${sub.candidate.id}`}
-                      className="text-[11px] font-bold text-blue-600 hover:underline"
-                    >
-                      Timeline →
-                    </Link>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <Link
+                        href={`/admin/candidates/${sub.candidate.id}`}
+                        className="text-[11px] font-bold text-blue-600 hover:underline"
+                      >
+                        Timeline →
+                      </Link>
+                      <CandidateManageActions
+                        candidateId={sub.candidate.id}
+                        candidateName={sub.candidate.name}
+                        fileId={sub.resumeFile?.id}
+                        hasSubmissions
+                        variant="compact"
+                      />
+                    </div>
                   </td>
                 </tr>
               ))
