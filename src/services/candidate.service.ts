@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { candidates, NewCandidate, files, NewFileRecord } from "@/db/schema";
 import { randomUUID } from "crypto";
 import { eq, or, like, sql, desc, and } from "drizzle-orm";
-import { getStorageProvider } from "./storage.service";
+import { getStorageProvider, getStorageProviderName } from "./storage.service";
 import { createAuditLog } from "./audit.service";
 
 export interface CreateCandidateInput {
@@ -68,7 +68,7 @@ export async function createCandidate(input: CreateCandidateInput, adminUserId: 
     submissionId: null,
     fileName: input.resumeFileName,
     storageKey,
-    storageProvider: process.env.STORAGE_PROVIDER || "local",
+    storageProvider: getStorageProviderName(),
     mimeType: input.mimeType,
     fileSize: input.resumeBuffer.length,
     uploadedBy: adminUserId,

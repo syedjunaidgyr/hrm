@@ -18,6 +18,7 @@ import {
   userProjects,
 } from "./schema";
 import { LocalStorageProvider } from "../services/storage.service";
+import { eq } from "drizzle-orm";
 
 async function seed() {
   console.log("Seeding database...");
@@ -393,7 +394,19 @@ async function seed() {
       status: "PENDING",
       createdBy: vendorXYZUserId,
     },
-  ]).onDuplicateKeyUpdate({ set: { status: "PENDING" } });
+  ]).onDuplicateKeyUpdate({
+    set: {
+      status: "PENDING",
+      projectId: projABC1,
+      disciplineId: discEngId,
+    },
+  });
+
+  // Force job2/job3 project links on re-seed (MySQL ON DUPLICATE only updates one row's SET;
+  // apply explicit updates so existing DBs get correct project scoping.)
+  await db.update(jobDescriptions).set({ projectId: projABC1, disciplineId: discEngId }).where(eq(jobDescriptions.id, job1Id));
+  await db.update(jobDescriptions).set({ projectId: projABC2, disciplineId: discInfraId, status: "WIP" }).where(eq(jobDescriptions.id, job2Id));
+  await db.update(jobDescriptions).set({ projectId: projXYZ1, disciplineId: discAnalyticsId }).where(eq(jobDescriptions.id, job3Id));
 
   // 9. Candidates & Resumes
   const candidate1Id = "c1111111-1111-1111-1111-111111111111";

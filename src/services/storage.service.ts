@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { Readable } from "stream";
+import { pool } from "@/db";
 
 export interface StorageProvider {
   upload(fileBuffer: Buffer, storageKey: string): Promise<string>;
@@ -13,17 +14,18 @@ export class LocalStorageProvider implements StorageProvider {
 
   constructor() {
     this.basePath = path.resolve(process.env.LOCAL_STORAGE_PATH || "./storage");
-    if (!fs.existsSync(this.basePath)) {
-      fs.mkdirSync(this.basePath, { recursive: true });
+  }
+
+  private ensureDir(dir: string) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
   }
 
   async upload(fileBuffer: Buffer, storageKey: string): Promise<string> {
+    this.ensureDir(this.basePath);
     const fullPath = path.join(this.basePath, storageKey);
-    const dir = path.dirname(fullPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    this.ensureDir(path.dirname(fullPath));
     await fs.promises.writeFile(fullPath, fileBuffer);
     return storageKey;
   }
@@ -44,9 +46,49 @@ export class LocalStorageProvider implements StorageProvider {
   }
 }
 
+/** Stores resume bytes in MySQL so uploads work on Vercel (read-only filesystem). */
+export class DbStorageProvider implements StorageProvider {
+  private ensured = false;
+
+  private async ensureTable() {
+    if (this.ensured) return;
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS file_blobs (
+        storage_key VARCHAR(500) NOT NULL,
+        content MEDIUMBLOB NOT NULL,
+        PRIMARY KEY (storage_key)
+      )
+    `);
+    this.ensured = true;
+  }
+
+  async upload(fileBuffer: Buffer, storageKey: string): Promise<string> {
+    await this.ensureTable();
+    await pool.query(
+      "INSERT INTO file_blobs (storage_key, content) VALUES (?, ?) ON DUPLICATE KEY UPDATE content = VALUES(content)",
+      [storageKey, fileBuffer]
+    );
+    return storageKey;
+  }
+
+  async getStream(storageKey: string): Promise<Readable> {
+    await this.ensureTable();
+    const [rows] = await pool.query("SELECT content FROM file_blobs WHERE storage_key = ?", [storageKey]);
+    const row = (rows as { content: Buffer }[])[0];
+    if (!row?.content) {
+      throw new Error(`File not found at path: ${storageKey}`);
+    }
+    return Readable.from(row.content);
+  }
+
+  async delete(storageKey: string): Promise<void> {
+    await this.ensureTable();
+    await pool.query("DELETE FROM file_blobs WHERE storage_key = ?", [storageKey]);
+  }
+}
+
 export class S3StorageProvider implements StorageProvider {
   async upload(_fileBuffer: Buffer, storageKey: string): Promise<string> {
-    // S3 implementation placeholder using AWS SDK if configured in production
     console.log(`[S3 Storage] Uploading key: ${storageKey}`);
     return storageKey;
   }
@@ -60,10 +102,22 @@ export class S3StorageProvider implements StorageProvider {
   }
 }
 
+export function getStorageProviderName(): string {
+  const explicit = (process.env.STORAGE_PROVIDER || "").toLowerCase();
+  if (explicit === "s3" || explicit === "r2") return explicit;
+  if (explicit === "db") return "db";
+  // Vercel (and other serverless) filesystems are read-only except /tmp
+  if (process.env.VERCEL) return "db";
+  return explicit || "local";
+}
+
 export function getStorageProvider(): StorageProvider {
-  const provider = process.env.STORAGE_PROVIDER || "local";
+  const provider = getStorageProviderName();
   if (provider === "s3" || provider === "r2") {
     return new S3StorageProvider();
+  }
+  if (provider === "db") {
+    return new DbStorageProvider();
   }
   return new LocalStorageProvider();
 }

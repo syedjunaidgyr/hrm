@@ -7,7 +7,6 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import { ArrowLeft, Users, Pencil } from "lucide-react";
-import { ResumePreviewModal } from "@/components/ui/ResumePreviewModal";
 import { NotifyClientSubmissions } from "@/components/admin/NotifyClientSubmissions";
 
 export default async function AdminJobDetailPage({
@@ -31,7 +30,9 @@ export default async function AdminJobDetailPage({
   const submissionRows = job.submissions.map((sub) => ({
     id: sub.id,
     status: sub.status,
-    notifiedAt: (sub as any).notifiedAt ?? null,
+    notifiedAt: (sub as any).notifiedAt
+      ? new Date((sub as any).notifiedAt).toISOString()
+      : null,
     candidate: {
       id: sub.candidate.id,
       name: sub.candidate.name,
@@ -206,103 +207,7 @@ export default async function AdminJobDetailPage({
             <CandidateModalForm jobs={formattedJobs} defaultJobId={job.id} buttonLabel="Submit CV" />
           </div>
 
-          <NotifyClientSubmissions submissions={submissionRows}>
-            {({ selected, toggle, toggleAll, allSelected }) => (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 uppercase font-semibold text-[11px] tracking-wide">
-                      <th className="py-2.5 px-3 w-10">
-                        <input
-                          type="checkbox"
-                          checked={allSelected}
-                          onChange={toggleAll}
-                          aria-label="Select all"
-                        />
-                      </th>
-                      <th className="py-2.5 px-3">Candidate</th>
-                      <th className="py-2.5 px-3">Experience</th>
-                      <th className="py-2.5 px-3">Skills</th>
-                      <th className="py-2.5 px-3">Status</th>
-                      <th className="py-2.5 px-3">Notified</th>
-                      <th className="py-2.5 px-3">Resume</th>
-                      <th className="py-2.5 px-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {submissionRows.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="py-10 text-center text-slate-500 font-medium">
-                          No CVs submitted yet. Click &quot;Submit CV&quot; above.
-                        </td>
-                      </tr>
-                    ) : (
-                      submissionRows.map((sub) => (
-                        <tr key={sub.id} className="hover:bg-slate-50">
-                          <td className="py-3 px-3">
-                            <input
-                              type="checkbox"
-                              checked={selected.has(sub.id)}
-                              onChange={() => toggle(sub.id)}
-                              aria-label={`Select ${sub.candidate.name}`}
-                            />
-                          </td>
-                          <td className="py-3 px-3 font-bold text-slate-900">
-                            <div>
-                              <Link
-                                href={`/admin/candidates/${sub.candidate.id}`}
-                                className="text-blue-600 hover:underline font-bold"
-                              >
-                                {sub.candidate.name}
-                              </Link>
-                              <p className="text-[11px] text-slate-500 font-normal">
-                                {sub.candidate.email} • {sub.candidate.phone}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="py-3 px-3 font-semibold text-slate-800">
-                            {sub.candidate.totalExperience} Yrs
-                          </td>
-                          <td className="py-3 px-3 text-slate-600 max-w-xs truncate">
-                            {sub.candidate.skills}
-                          </td>
-                          <td className="py-3 px-3">
-                            <Badge status={sub.status}>{sub.status.replace(/_/g, " ")}</Badge>
-                          </td>
-                          <td className="py-3 px-3 text-slate-500">
-                            {sub.notifiedAt
-                              ? new Date(sub.notifiedAt).toLocaleDateString()
-                              : "—"}
-                          </td>
-                          <td className="py-3 px-3">
-                            {sub.resumeFile ? (
-                              <ResumePreviewModal
-                                fileId={sub.resumeFile.id}
-                                fileName={sub.resumeFile.fileName}
-                                candidateName={sub.candidate.name}
-                                triggerLabel="Preview"
-                                triggerVariant="link"
-                              />
-                            ) : (
-                              <span className="text-slate-400">N/A</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            <Link
-                              href={`/admin/candidates/${sub.candidate.id}`}
-                              className="text-[11px] font-bold text-blue-600 hover:underline"
-                            >
-                              Timeline →
-                            </Link>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </NotifyClientSubmissions>
+          <NotifyClientSubmissions submissions={submissionRows} />
         </Card>
       </div>
     </DashboardLayout>

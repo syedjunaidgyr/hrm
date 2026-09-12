@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Loader2 } from "lucide-react";
 import { Toast } from "@/components/ui/Toast";
+import { Badge } from "@/components/ui/Badge";
+import { ResumePreviewModal } from "@/components/ui/ResumePreviewModal";
 
 interface SubmissionRow {
   id: string;
@@ -22,20 +25,15 @@ interface SubmissionRow {
 
 export function NotifyClientSubmissions({
   submissions,
-  children,
 }: {
   submissions: SubmissionRow[];
-  children: (props: {
-    selected: Set<string>;
-    toggle: (id: string) => void;
-    toggleAll: () => void;
-    allSelected: boolean;
-  }) => React.ReactNode;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; title: string; message?: string } | null>(null);
+
+  const allSelected = submissions.length > 0 && selected.size === submissions.length;
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -47,7 +45,7 @@ export function NotifyClientSubmissions({
   };
 
   const toggleAll = () => {
-    if (selected.size === submissions.length) setSelected(new Set());
+    if (allSelected) setSelected(new Set());
     else setSelected(new Set(submissions.map((s) => s.id)));
   };
 
@@ -105,12 +103,99 @@ export function NotifyClientSubmissions({
           Notify Client
         </button>
       </div>
-      {children({
-        selected,
-        toggle,
-        toggleAll,
-        allSelected: submissions.length > 0 && selected.size === submissions.length,
-      })}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-slate-200 text-slate-500 uppercase font-semibold text-[11px] tracking-wide">
+              <th className="py-2.5 px-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  aria-label="Select all"
+                />
+              </th>
+              <th className="py-2.5 px-3">Candidate</th>
+              <th className="py-2.5 px-3">Experience</th>
+              <th className="py-2.5 px-3">Skills</th>
+              <th className="py-2.5 px-3">Status</th>
+              <th className="py-2.5 px-3">Notified</th>
+              <th className="py-2.5 px-3">Resume</th>
+              <th className="py-2.5 px-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {submissions.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-10 text-center text-slate-500 font-medium">
+                  No CVs submitted yet. Click &quot;Submit CV&quot; above.
+                </td>
+              </tr>
+            ) : (
+              submissions.map((sub) => (
+                <tr key={sub.id} className="hover:bg-slate-50">
+                  <td className="py-3 px-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(sub.id)}
+                      onChange={() => toggle(sub.id)}
+                      aria-label={`Select ${sub.candidate.name}`}
+                    />
+                  </td>
+                  <td className="py-3 px-3 font-bold text-slate-900">
+                    <div>
+                      <Link
+                        href={`/admin/candidates/${sub.candidate.id}`}
+                        className="text-blue-600 hover:underline font-bold"
+                      >
+                        {sub.candidate.name}
+                      </Link>
+                      <p className="text-[11px] text-slate-500 font-normal">
+                        {sub.candidate.email} • {sub.candidate.phone}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="py-3 px-3 font-semibold text-slate-800">
+                    {sub.candidate.totalExperience} Yrs
+                  </td>
+                  <td className="py-3 px-3 text-slate-600 max-w-xs truncate">
+                    {sub.candidate.skills}
+                  </td>
+                  <td className="py-3 px-3">
+                    <Badge status={sub.status}>{sub.status.replace(/_/g, " ")}</Badge>
+                  </td>
+                  <td className="py-3 px-3 text-slate-500">
+                    {sub.notifiedAt
+                      ? new Date(sub.notifiedAt).toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td className="py-3 px-3">
+                    {sub.resumeFile ? (
+                      <ResumePreviewModal
+                        fileId={sub.resumeFile.id}
+                        fileName={sub.resumeFile.fileName}
+                        candidateName={sub.candidate.name}
+                        triggerLabel="Preview"
+                        triggerVariant="link"
+                      />
+                    ) : (
+                      <span className="text-slate-400">N/A</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-3 text-right">
+                    <Link
+                      href={`/admin/candidates/${sub.candidate.id}`}
+                      className="text-[11px] font-bold text-blue-600 hover:underline"
+                    >
+                      Timeline →
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

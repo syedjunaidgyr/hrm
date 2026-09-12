@@ -32,6 +32,7 @@ export * from "./disciplines";
 export * from "./status-masters";
 export * from "./job-titles";
 export * from "./user-projects";
+export * from "./file-blobs";
 
 // Drizzle Relations
 export const vendorsRelations = relations(vendors, ({ many }) => ({
