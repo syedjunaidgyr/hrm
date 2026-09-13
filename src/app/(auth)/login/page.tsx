@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, Eye, EyeOff } from "lucide-react";
+import { Briefcase, Lock, Mail, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Toast } from "@/components/ui/Toast";
@@ -48,11 +48,6 @@ export default function LoginPage() {
       setErrorMsg("Network error occurred during login.");
       setIsLoading(false);
     }
-  };
-
-  const handleQuickLogin = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
   };
 
   return (
@@ -126,38 +121,6 @@ export default function LoginPage() {
               Sign In to Portal
             </Button>
           </form>
-
-          {/* Quick Demo Logins Section */}
-          <div className="pt-6 border-t border-slate-200/80">
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider text-center mb-3">
-              Quick Demo Accounts
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("admin@example.com", "Admin123!@#")}
-                className="flex items-center gap-2.5 p-3 rounded-2xl border border-purple-200/80 bg-[#E5E5FF]/60 hover:bg-[#E5E5FF] transition-all text-left group shadow-2xs"
-              >
-                <ShieldCheck className="w-4 h-4 text-[#4A4AFF] shrink-0" />
-                <div>
-                  <p className="text-xs font-black text-[#1E1E1E] leading-none">Admin Demo</p>
-                  <p className="text-[10px] text-slate-500 font-medium mt-1">admin@example.com</p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("vendor_abc@example.com", "Vendor123!@#")}
-                className="flex items-center gap-2.5 p-3 rounded-2xl border border-emerald-200/80 bg-[#E4F8E5]/60 hover:bg-[#E4F8E5] transition-all text-left group shadow-2xs"
-              >
-                <UserCheck className="w-4 h-4 text-[#2E7D32] shrink-0" />
-                <div>
-                  <p className="text-xs font-black text-[#1E1E1E] leading-none">Client ABC</p>
-                  <p className="text-[10px] text-slate-500 font-medium mt-1">vendor_abc@example.com</p>
-                </div>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
